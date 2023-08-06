@@ -6,6 +6,7 @@ import SplashScreenScreen from './screens/SplashScreen';
 import HomeScreen from './screens/HomeScreen';
 import CaraPenggunaanScreen from './screens/CaraPenggunaanScreen';
 import TentangScreen from './screens/TentangScreen';
+import { StatusBar } from 'react-native';
 
 const Stack = createStackNavigator();
 
@@ -25,12 +26,28 @@ const AppNavigator = () => {
     <Stack.Screen 
         name="Cara Penggunaan" 
         component={CaraPenggunaanScreen}
-        options={{ headerShown: true }}
+        options={{ headerShown: true,
+            headerStyle: {
+                backgroundColor: "#008B8B",
+              },
+              headerTitleStyle: {
+                color: "white",
+              },
+              headerTintColor: "white"
+        }}
         />
     <Stack.Screen 
         name="Tentang" 
         component={TentangScreen}
-        options={{ headerShown: true }}
+        options={{ headerShown: true,
+            headerStyle: {
+                backgroundColor: "#008B8B",
+              },
+              headerTitleStyle: {
+                color: "white",
+              },
+              headerTintColor: "white"
+        }}
         />
     </Stack.Navigator>
   );
