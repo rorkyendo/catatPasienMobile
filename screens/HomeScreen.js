@@ -11,7 +11,11 @@ const HomeScreen = ({navigation}) => {
         <Text style={{color:"white", alignItems: 'center',fontSize:18,fontWeight:'bold'}}>COVID-19 PUSKESMAS PUJIDADI</Text>
       </View>
       <View style={{flexDirection:"row",margin:30,paddingTop:140,position:"absolute"}}>
-        <Pressable style={{marginRight:10}}>
+        <Pressable style={{marginRight:10}}
+            onPress={()=>{
+              navigation.navigate("Catat Peserta");
+            }}
+          >
           <View style={{backgroundColor:"white",width:160,height:160,borderRadius:30,justifyContent: 'center', alignItems: 'center'}}>
             <Image source={require("../assets/add.png")}/>
             <Text style={{color:"black",fontWeight:"bold"}}>Catat Peserta</Text>
