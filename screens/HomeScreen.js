@@ -21,7 +21,11 @@ const HomeScreen = ({navigation}) => {
             <Text style={{color:"black",fontWeight:"bold"}}>Catat Peserta</Text>
           </View>
         </Pressable>
-        <Pressable style={{marginLeft:10}}>
+        <Pressable style={{marginLeft:10}}
+            onPress={()=>{
+              navigation.navigate("Daftar Peserta");
+            }}
+          >
           <View style={{backgroundColor:"white",width:160,height:160,borderRadius:30,justifyContent: 'center', alignItems: 'center'}}>
             <Image source={require("../assets/daftar.png")}/>
             <Text style={{color:"black",fontWeight:"bold"}}>Daftar Peserta</Text>

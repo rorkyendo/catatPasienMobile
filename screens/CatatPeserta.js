@@ -52,7 +52,7 @@ useEffect(() => {
     if (cameraRef) {
       const options = { quality: 1, base64: true };
       const data = await cameraRef.takePictureAsync(options);
-      const data2 = await cameraRef.takePictureAsync();
+      // const data2 = await cameraRef.takePictureAsync();
       // console.log(data2)
 
       setKtpImage(data.uri);
@@ -77,6 +77,7 @@ useEffect(() => {
     try {
       const docRef = await addDoc(collection(db, "dataPasien"), data);
       console.log("Document written with ID: ", docRef.id);
+      alert('Data berhasil disimpan');
     } catch (e) {
       console.error("Error adding document: ", e);
     }

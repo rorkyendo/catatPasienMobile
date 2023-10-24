@@ -7,6 +7,7 @@ import HomeScreen from './screens/HomeScreen';
 import CaraPenggunaanScreen from './screens/CaraPenggunaanScreen';
 import TentangScreen from './screens/TentangScreen';
 import CatatPeserta from './screens/CatatPeserta';
+import DaftarPesertaScreen from './screens/DaftarPeserta';
 import { StatusBar } from 'react-native';
 
 const Stack = createStackNavigator();
@@ -53,6 +54,19 @@ const AppNavigator = () => {
     <Stack.Screen 
         name="Catat Peserta" 
         component={CatatPeserta}
+        options={{ headerShown: true,
+            headerStyle: {
+                backgroundColor: "#008B8B",
+              },
+              headerTitleStyle: {
+                color: "white",
+              },
+              headerTintColor: "white"
+        }}
+        />
+    <Stack.Screen 
+        name="Daftar Peserta" 
+        component={DaftarPesertaScreen}
         options={{ headerShown: true,
             headerStyle: {
                 backgroundColor: "#008B8B",
