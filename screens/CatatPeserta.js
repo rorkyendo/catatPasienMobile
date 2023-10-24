@@ -13,8 +13,11 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import { Camera } from 'expo-camera';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as ImageManipulator from 'expo-image-manipulator'; // Import ImageManipulator for cropping
+// import * as ImageManipulator from 'expo-image-manipulator'; // Import ImageManipulator for cropping
 import { Dimensions } from 'react-native';
+import {app} from '../firebaseConfig';
+import { addDoc, getFirestore, collection, getDocs } from 'firebase/firestore/lite';
+// import { , collection } from "firebase/firestore"; 
 
 export default function CatatPeserta() {
   const [nik, setNIK] = useState('');
@@ -31,13 +34,14 @@ export default function CatatPeserta() {
   const [cameraRef, setCameraRef] = useState(null);
   const [isCameraModalVisible, setCameraModalVisible] = useState(false); // State for camera modal visibility
   const [ktpImage, setKtpImage] = useState(null);
+  const db = getFirestore(app);
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await Camera.requestPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
-  }, []);
+useEffect(() => {
+  (async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    setHasPermission(status === 'granted');
+  })();
+}, []);
 
   // Function to toggle the camera modal's visibility
   const toggleCameraModal = () => {
@@ -49,13 +53,35 @@ export default function CatatPeserta() {
       const options = { quality: 1, base64: true };
       const data = await cameraRef.takePictureAsync(options);
       const data2 = await cameraRef.takePictureAsync();
-      console.log(data2)
+      // console.log(data2)
 
       setKtpImage(data.uri);
       toggleCameraModal();
     }
   };
 
+  async function simpanData(){
+    const data = {
+      nik: nik,
+      nama: nama,
+      tempat_lahir: tempatLahir,
+      goldar: golonganDarah,
+      pekerjaan: pekerjaan,
+      jenkel: jenisKelamin,
+      alamat: alamat,
+      kelurahan: kelurahan,
+      kecamatan: kecamatan,
+      agama: agama
+    };
+
+    try {
+      const docRef = await addDoc(collection(db, "dataPasien"), data);
+      console.log("Document written with ID: ", docRef.id);
+    } catch (e) {
+      console.error("Error adding document: ", e);
+    }
+
+  }
 
   return (
     <SafeAreaProvider>
@@ -234,6 +260,7 @@ export default function CatatPeserta() {
                 marginTop: 20,
                 marginBottom: 100
               }}
+              onPress={simpanData}
             >
             <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
               Simpan Data
