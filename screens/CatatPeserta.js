@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  Button,
   SafeAreaView,
   ScrollView,
   TextInput,
@@ -18,11 +19,16 @@ import { Dimensions } from 'react-native';
 import {app} from '../firebaseConfig';
 import { addDoc, getFirestore, collection, getDocs } from 'firebase/firestore/lite';
 // import { , collection } from "firebase/firestore"; 
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 export default function CatatPeserta() {
   const [nik, setNIK] = useState('');
   const [nama, setNama] = useState('');
   const [tempatLahir, setTempatLahir] = useState('');
+  
+  const [tglLahir, setTglLahir] = useState('yyyy/mm/dd');
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+
   const [jenisKelamin, setJenisKelamin] = useState('LAKI-LAKI');
   const [golonganDarah, setGolonganDarah] = useState('');
   const [alamat, setAlamat] = useState('');
@@ -35,6 +41,8 @@ export default function CatatPeserta() {
   const [isCameraModalVisible, setCameraModalVisible] = useState(false); // State for camera modal visibility
   const [ktpImage, setKtpImage] = useState(null);
   const db = getFirestore(app);
+  const [mode, setMode] = useState('date');
+  const [show, setShow] = useState(false);
 
 useEffect(() => {
   (async () => {
@@ -65,6 +73,7 @@ useEffect(() => {
       nik: nik,
       nama: nama,
       tempat_lahir: tempatLahir,
+      tgl_lahir: tglLahir,
       goldar: golonganDarah,
       pekerjaan: pekerjaan,
       jenkel: jenisKelamin,
@@ -83,6 +92,19 @@ useEffect(() => {
     }
 
   }
+
+  const showDatePicker = () => {
+    setDatePickerVisibility(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
+  };
+
+  const handleConfirm = (date) => {
+    setTglLahir(date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate());
+    hideDatePicker();
+  };
 
   return (
     <SafeAreaProvider>
@@ -197,17 +219,31 @@ useEffect(() => {
               onChangeText={(text) => setNama(text)}
               style={styles.input}
             />
+
             <TextInput
               placeholder="Tempat Lahir"
               value={tempatLahir}
               onChangeText={(text) => setTempatLahir(text)}
               style={styles.input}
             />
+
+            <View style={{marginTop:10}}>
+              <Text style={styles.input}>{tglLahir}</Text>
+              <Button title="Pilih Tanggal lahir" onPress={showDatePicker} />
+              <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="date"
+                onConfirm={handleConfirm}
+                onCancel={hideDatePicker}
+              />
+            </View>
+
             <Picker
               selectedValue={jenisKelamin}
               onValueChange={(itemValue) => setJenisKelamin(itemValue)}
               style={styles.input}
             >
+
               <Picker.Item label="LAKI-LAKI" value="LAKI-LAKI" />
               <Picker.Item label="PEREMPUAN" value="PEREMPUAN" />
             </Picker>
