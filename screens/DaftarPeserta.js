@@ -1,16 +1,18 @@
 // screens/HomeScreen.js
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, Button } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {app} from '../firebaseConfig';
 import { getFirestore, collection, query, where, getDocs} from "firebase/firestore";
 import { ScrollView } from 'react-native-gesture-handler';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 export default function DaftarPesertaScreen() {
   const db = getFirestore(app);
   const dataPasien = collection(db, "dataPasien");
   const [querySnapshot, setSnapShot] = useState([]);
-
+  const [tglLahir, setTglLahir] = useState('yyyy/mm/dd');
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
   useEffect(() => {
     const q = query(dataPasien);
@@ -38,9 +40,47 @@ export default function DaftarPesertaScreen() {
     });
     setSnapShot(arrayData)
   }
+
+  const showDatePicker = () => {
+    setDatePickerVisibility(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
+  };
+
+  const handleConfirm = (date) => {
+    setTglLahir(date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate());
+    hideDatePicker();
+  };
   
   return (
     <SafeAreaProvider>
+      <View style={{
+        flexDirection: "row", 
+        backgroundColor: "white", 
+        margin: 10, 
+        padding: 10, 
+        borderColor: 'black', 
+        borderRadius: 5,
+        elevation: 5, // Properti elevation untuk platform Android
+        shadowColor: 'black', // Warna bayangan untuk platform iOS
+        shadowOffset: { width: 0, height: 2 }, // Offset bayangan (x, y)
+        shadowOpacity: 0.2, // Opasitas bayangan
+        shadowRadius: 4, // Radius bayangan
+        width: '100%'
+      }}>
+        <View>
+          <Text style={styles.input}>{tglLahir}</Text>
+          <Button title="Pilih Tanggal lahir" onPress={showDatePicker} />
+          <DateTimePickerModal
+            isVisible={isDatePickerVisible}
+            mode="date"
+            onConfirm={handleConfirm}
+            onCancel={hideDatePicker}
+          />
+        </View>
+      </View>
       <ScrollView>
           {querySnapshot.map((key, index) => (
             <View key={index} style={{ 
@@ -57,11 +97,8 @@ export default function DaftarPesertaScreen() {
               shadowRadius: 4, // Radius bayangan
             }}>
               <View style={{ flexDirection: 'column' }}>
-                  <Text style={{ color: "black", fontWeight: "bold" }}>NIK: {key.nik}</Text>
                   <Text style={{ color: "black", fontWeight: "bold" }}>Nama: {key.nama}</Text>
-                  <Text style={{ color: "black", fontWeight: "bold" }}>Jenkel: {key.jenkel}</Text>
-                  <Text style={{ color: "black", fontWeight: "bold" }}>Alamat: {key.alamat}</Text>
-                  <Text style={{ color: "black", fontWeight: "bold" }}>Agama: {key.agama}</Text>
+                  <Text style={{ color: "black", fontWeight: "bold" }}>NIK: {key.nik}</Text>
               </View>
             </View>
           ))}
@@ -69,3 +106,26 @@ export default function DaftarPesertaScreen() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 4,
+    marginTop: 10,
+    padding: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  closeButton: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    backgroundColor: '#008B8B',
+    padding: 10,
+    textAlign: 'center',
+  },
+});
