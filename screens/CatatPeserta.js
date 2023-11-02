@@ -175,6 +175,7 @@ useEffect(() => {
   }
     
   async function simpanData(){
+    let today = new Date().toISOString().slice(0, 10);
     const data = {
       nik: nik,
       nama: nama,
@@ -187,7 +188,8 @@ useEffect(() => {
       kelurahan: kelurahan,
       kecamatan: kecamatan,
       agama: agama,
-      fileKtp: alamatFile
+      fileKtp: alamatFile,
+      createdAt: today
     };
 
     try {

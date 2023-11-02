@@ -5,14 +5,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {app} from '../firebaseConfig';
 import { getFirestore, collection, query, where, getDocs} from "firebase/firestore";
 import { ScrollView } from 'react-native-gesture-handler';
-import DateTimePickerModal from "react-native-modal-datetime-picker";
 
-export default function DaftarPesertaScreen() {
+export default function DetailPesertaScreen() {
   const db = getFirestore(app);
   const dataPasien = collection(db, "dataPasien");
   const [querySnapshot, setSnapShot] = useState([]);
-  const [tglDibuat, setTglDibuat] = useState('yyyy/mm/dd');
-  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
   useEffect(() => {
     const q = query(dataPasien);
@@ -35,7 +32,6 @@ export default function DaftarPesertaScreen() {
       setData['jenkel'] = docs.data().jenkel
       setData['kecamatan'] = docs.data().kecamatan
       setData['kelurahan'] = docs.data().kelurahan
-      setData['createdAt'] = docs.data().createdAt
       arrayData[i] = setData;
       i++
     });
@@ -51,37 +47,12 @@ export default function DaftarPesertaScreen() {
   };
 
   const handleConfirm = (date) => {
-    setTglDibuat(date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate());
+    setTglLahir(date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate());
     hideDatePicker();
   };
   
   return (
     <SafeAreaProvider>
-      <View style={{
-        flexDirection: "row", 
-        backgroundColor: "white", 
-        margin: 10, 
-        padding: 10, 
-        borderColor: 'black', 
-        borderRadius: 5,
-        elevation: 5, // Properti elevation untuk platform Android
-        shadowColor: 'black', // Warna bayangan untuk platform iOS
-        shadowOffset: { width: 0, height: 2 }, // Offset bayangan (x, y)
-        shadowOpacity: 0.2, // Opasitas bayangan
-        shadowRadius: 4, // Radius bayangan
-        width: 'auto'
-      }}>
-        <View style={{flex:1}}>
-          <Text style={styles.input}>{tglDibuat}</Text>
-          <Button title="Pilih Tanggal Masuk" onPress={showDatePicker} />
-          <DateTimePickerModal
-            isVisible={isDatePickerVisible}
-            mode="date"
-            onConfirm={handleConfirm}
-            onCancel={hideDatePicker}
-          />
-        </View>
-      </View>
       <ScrollView>
           {querySnapshot.map((key, index) => (
             <View key={index} style={{ 
@@ -98,12 +69,8 @@ export default function DaftarPesertaScreen() {
               shadowRadius: 4, // Radius bayangan
             }}>
               <View style={{ flexDirection: 'column' }}>
-                <Text style={{ color: "black", fontWeight: "bold" }}>Nama: {key.nama}</Text>
-                <Text style={{ color: "black", fontWeight: "bold" }}>NIK: {key.nik}</Text>
-                <Text style={{ color: "black", fontWeight: "bold" }}>Dibuat Pada: {key.createdAt}</Text>
-              </View>
-              <View style={{ marginLeft:300,marginTop:20,position:'absolute',border:1,backgroundColor:'black',elevation: 5}}>
-                  <Text style={{margin:10,color:'white'}}>Detail</Text>
+                  <Text style={{ color: "black", fontWeight: "bold" }}>Nama: {key.nama}</Text>
+                  <Text style={{ color: "black", fontWeight: "bold" }}>NIK: {key.nik}</Text>
               </View>
             </View>
           ))}
