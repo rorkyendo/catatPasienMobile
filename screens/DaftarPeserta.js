@@ -1,14 +1,15 @@
 // screens/HomeScreen.js
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
+import { View, Text, StyleSheet, Button, TextInput, Pressable } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {app} from '../firebaseConfig';
 import { getFirestore, collection, query, where, getDocs} from "firebase/firestore";
 import { ScrollView } from 'react-native-gesture-handler';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
-export default function DaftarPesertaScreen() {
+export default function DaftarPesertaScreen({navigation}) {
   const db = getFirestore(app);
+  const [nama,setNama] = useState('');
   const dataPasien = collection(db, "dataPasien");
   const [querySnapshot, setSnapShot] = useState([]);
   const [tglDibuat, setTglDibuat] = useState('yyyy/mm/dd');
@@ -25,6 +26,7 @@ export default function DaftarPesertaScreen() {
     var i = 0;
     data.forEach((docs) => {
       let setData = {}
+      // console.log(docs.data())
       setData['nama'] = docs.data().nama
       setData['nik'] = docs.data().nik
       setData['pekerjaan'] = docs.data().pekerjaan
@@ -72,6 +74,12 @@ export default function DaftarPesertaScreen() {
         width: 'auto'
       }}>
         <View style={{flex:1}}>
+          <TextInput
+            placeholder="Cari berdasarkan nama"
+            value={nama}
+            onChangeText={(text) => setNama(text)}
+            style={styles.input}
+          />
           <Text style={styles.input}>{tglDibuat}</Text>
           <Button title="Pilih Tanggal Masuk" onPress={showDatePicker} />
           <DateTimePickerModal
@@ -97,13 +105,19 @@ export default function DaftarPesertaScreen() {
               shadowOpacity: 0.2, // Opasitas bayangan
               shadowRadius: 4, // Radius bayangan
             }}>
-              <View style={{ flexDirection: 'column' }}>
-                <Text style={{ color: "black", fontWeight: "bold" }}>Nama: {key.nama}</Text>
-                <Text style={{ color: "black", fontWeight: "bold" }}>NIK: {key.nik}</Text>
-                <Text style={{ color: "black", fontWeight: "bold" }}>Dibuat Pada: {key.createdAt}</Text>
-              </View>
-              <View style={{ marginLeft:300,marginTop:20,position:'absolute',border:1,backgroundColor:'black',elevation: 5}}>
+                <View style={{ flexDirection: 'column' }}>
+                  <Text style={{ color: "black", fontWeight: "bold" }}>Nama: {key.nama}</Text>
+                  <Text style={{ color: "black", fontWeight: "bold" }}>NIK: {key.nik}</Text>
+                  <Text style={{ color: "black", fontWeight: "bold" }}>Dibuat Pada: {key.createdAt}</Text>
+                </View>
+                <View style={{ marginLeft:300,marginTop:20,position:'absolute',border:1,backgroundColor:'black',elevation: 5}}>
+                  <Pressable
+                    onPress={()=>{
+                      navigation.navigate("Detail Informasi Peserta",{idPeserta: key.nik});
+                    }}
+                  >
                   <Text style={{margin:10,color:'white'}}>Detail</Text>
+              </Pressable>
               </View>
             </View>
           ))}
