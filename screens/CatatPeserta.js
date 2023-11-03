@@ -18,9 +18,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Dimensions } from 'react-native';
 import {app} from '../firebaseConfig';
 import { addDoc, getFirestore, collection, getDocs } from 'firebase/firestore/lite';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import * as FileSystem from 'expo-file-system';
-import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker'
 
 export default function CatatPeserta({ navigation }) {
   const [nik, setNIK] = useState('');
@@ -33,68 +33,87 @@ export default function CatatPeserta({ navigation }) {
   const [jenisKelamin, setJenisKelamin] = useState('LAKI-LAKI');
   const [golonganDarah, setGolonganDarah] = useState('');
   const [alamat, setAlamat] = useState('');
+
   const [alamatFile, setAlamatFile] = useState('');
+  const [uploading, setUploading] = useState(false)
+
   const [kelurahan, setKelurahan] = useState('');
   const [kecamatan, setKecamatan] = useState('');
   const [agama, setAgama] = useState('ISLAM');
   const [pekerjaan, setPekerjaan] = useState('');
   const [hasPermission, setHasPermission] = useState(null);
-  const [cameraRef, setCameraRef] = useState(null);
-  const [isCameraModalVisible, setCameraModalVisible] = useState(false); // State for camera modal visibility
   const [ktpImage, setKtpImage] = useState(null);
   const db = getFirestore(app);
 
-useEffect(() => {
-  (async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    setHasPermission(status === 'granted');
-  })();
-}, []);
+  useEffect(() => {
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === 'granted');
+    })();
+  }, []);
 
-  // Function to toggle the camera modal's visibility
-  const toggleCameraModal = () => {
-    setCameraModalVisible(!isCameraModalVisible);
-  };
-
-  const takePicture = async () => {
-    if (cameraRef) {
-      const options = { quality: 1, base64: true };
-      const data = await cameraRef.takePictureAsync(options);
-      setKtpImage(data.uri);
-      uploadGambar(data.uri);
-
-      const options2 = { quality: 0.4, base64: true };
-      const data2 = await cameraRef.takePictureAsync(options2);
-
-      // Convert the resized image URI to base64
-      const base64Image = await localImageUrlToBase64(data2.uri);
-      // Set the base64 image to state or use it directly as needed
-      setAlamatFile(base64Image);
-      toggleCameraModal();
-    }
-  };
-
-  const localImageUrlToBase64 = async (localImageUrl) => {
-    try {
-      const fileInfo = await FileSystem.getInfoAsync(localImageUrl);
-      if (fileInfo.exists) {
-        const base64 = await FileSystem.readAsStringAsync(localImageUrl, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        return base64;
-      } else {
-        throw new Error('File not found');
-      }
-    } catch (error) {
-      console.error('Error converting local image URL to base64:', error);
-      throw error;
-    }
-  };
+  const pickImage = async () => {
+      let result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.All,
+          allowsEditing: true,
+          aspect: [4,3],
+          quality: 1
+      });
+      const source = {uri: result.assets[0].uri}
+      setKtpImage(source.uri)
+      uploadGambar(source.uri)
+  }; 
   
+  const uploadToFirebase = async () => {
+    setUploading(true)
+    const storage = getStorage();
+    const localTime = new Date().getTime();
+    const storageRef = ref(storage, 'fotoKTP/ktp'+localTime);
+
+    try {
+        const blobFile = await uriToBlob(ktpImage)
+        // 'file' comes from the Blob or File API
+        const uploadTask = uploadBytesResumable(storageRef, blobFile);
+        uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log('Upload is ' + progress.toFixed(2) + '% done');
+        }, 
+        (error) => {
+          // Handle unsuccessful uploads
+        }, 
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            setAlamatFile(downloadURL);
+          });
+        }
+      );
+
+    } catch (error) {
+      console.error('Fetch error:', error);
+    }
+    setUploading(false)
+  } 
+
+  const uriToBlob = (uri) => {
+    return new Promise((resolve, reject) => {
+       const xhr = new XMLHttpRequest()
+       xhr.onload = function () {
+         // return the blob
+         resolve(xhr.response)
+       }
+       xhr.onerror = function () {
+         reject(new Error('uriToBlob failed'))
+       }
+       xhr.responseType = 'blob'
+       xhr.open('GET', uri, true)
+   
+       xhr.send(null)})}
+
   function uploadGambar(ktp) {
     let body = new FormData();
     
-    alert("Loading.. Gambar sedang diupload dan diproses..")
+    alert("Sistem sedang melakukan pengecekan KTP..")
 
     body.append('filename', {
       uri: ktp,
@@ -102,14 +121,14 @@ useEffect(() => {
       name: 'ktp.jpg', // Ganti dengan nama berkas yang sesuai jika perlu
     });
   
-    fetch('https://091c-182-2-167-24.ngrok-free.app/scan', {
-      method: 'POST',
-      body: body,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        // Jika diperlukan, Anda dapat menambahkan header lain di sini
-      },
-    })
+    fetch('http://192.168.204.30:8080/scan', {
+        method: 'POST',
+        body: body,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          // Jika diperlukan, Anda dapat menambahkan header lain di sini
+        },
+      })
       .then(response => response.json())
       .then(resp => {
         setTimeout(() => {
@@ -175,6 +194,8 @@ useEffect(() => {
   }
     
   async function simpanData(){
+    uploadToFirebase()
+
     let today = new Date().toISOString().slice(0, 10);
     const data = {
       nik: nik,
@@ -259,7 +280,7 @@ useEffect(() => {
                 source={{ uri: ktpImage }}
                 style={{
                   width: "auto", // Width of the bounding box
-                  height: 180, // Height of the bounding box
+                  height: 240, // Height of the bounding box
                   resizeMode: 'cover', // Make sure the image fills the specified dimensions
                 }}
               />
@@ -271,52 +292,13 @@ useEffect(() => {
                   alignItems: 'center',
                   height: 50,
                 }}
-                onPress={toggleCameraModal}
+                onPress={() => pickImage()}
               >
                 <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
-                  Ambil Gambar KTP dengan Frame
+                  Ambil Gambar KTP
                 </Text>
               </TouchableOpacity>
               {/* Render the camera view inside a modal */}
-              <Modal
-                visible={isCameraModalVisible}
-                transparent={true}
-                animationType="slide" // You can adjust the animation type as needed
-              >
-                <View style={styles.modalContainer}>
-                  <View style={{ flex: 1}}>
-                    <Camera
-                      ref={(ref) => setCameraRef(ref)}
-                      style={{ flex: 1 }}
-                      type={Camera.Constants.Type.back}
-                    >
-                      <View
-                        style={{
-                          flex: 1,
-                          backgroundColor: 'transparent',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <View
-                          style={{
-                            width: 320,
-                            height: 280,
-                            borderColor: '#008B8B',
-                            borderWidth: 2,
-                            position: 'absolute',
-                            left: (Dimensions.get('window').width - 320) / 2,
-                            top: (Dimensions.get('window').height - 280) / 2,
-                          }}
-                        ></View>
-                      </View>
-                    </Camera>
-                  </View>
-                  <TouchableOpacity onPress={takePicture}>
-                    <Text style={styles.closeButton}>Ambil Gambar</Text>
-                  </TouchableOpacity>
-                </View>
-              </Modal>
             </View>
             <TextInput
               placeholder="NIK"
