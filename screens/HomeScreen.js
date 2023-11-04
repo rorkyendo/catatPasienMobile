@@ -1,9 +1,71 @@
 // screens/HomeScreen.js
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Pressable, Image, BackHandler } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as FileSystem from 'expo-file-system';
+import XLSX from 'xlsx';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { app } from '../firebaseConfig';
+import * as Sharing from 'expo-sharing';
 
-const HomeScreen = ({navigation}) => {
+const HomeScreen = ({ navigation }) => {
+
+  const fetchDataFromFirestore = async () => {
+    const db = getFirestore(app);
+    const dataRef = collection(db, 'dataPasien'); // Replace 'data' with your Firestore collection name
+    const querySnapshot = await getDocs(dataRef);
+    const data = querySnapshot.docs.map((doc) => doc.data());
+    return data;
+  };
+
+  const exportToExcel = async () => {
+    const dataFromFirestore = await fetchDataFromFirestore();
+  
+    // Define the order of keys for the exported data
+    const orderedKeys = [
+      'nik',
+      'nama',
+      'tempat_lahir',
+      'tgl_lahir',
+      'goldar',
+      'pekerjaan',
+      'jenkel',
+      'alamat',
+      'kelurahan',
+      'kecamatan',
+      'agama',
+      'fileKtp',
+      'createdAt',
+    ];
+  
+    // Map the data to a new array of objects with ordered keys
+    const wsData = dataFromFirestore.map(item => {
+      const orderedItem = {};
+      orderedKeys.forEach(key => {
+        orderedItem[key] = item[key];
+      });
+      return orderedItem;
+    });
+  
+    const ws = XLSX.utils.json_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  
+    const wbout = XLSX.write(wb, {
+      bookType: 'xlsx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      type: 'base64',
+    });
+  
+    const uri = FileSystem.cacheDirectory + 'data.xlsx';
+  
+    await FileSystem.writeAsStringAsync(uri, wbout, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+  
+    await Sharing.shareAsync(uri, { mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', dialogTitle: 'Share this file' });
+  };
+
   return (
     <SafeAreaProvider>
       <View style={{ justifyContent: 'center', alignItems: 'center', backgroundColor:"#008B8B", width:"100%",height:"30%",borderBottomEndRadius:60,borderBottomLeftRadius:60}}>
@@ -33,7 +95,7 @@ const HomeScreen = ({navigation}) => {
         </Pressable>
       </View>
       <View style={{flexDirection:"row",margin:30,paddingTop:340,position:"absolute"}}>
-        <Pressable style={{marginRight:10}}>
+        <Pressable style={{marginRight:10}} onPress={exportToExcel}>
           <View style={{backgroundColor:"white",width:160,height:160,borderRadius:30,justifyContent: 'center', alignItems: 'center'}}>
             <Image source={require("../assets/ekspor.png")}/>
             <Text style={{color:"black",fontWeight:"bold"}}>Eksport Data</Text>

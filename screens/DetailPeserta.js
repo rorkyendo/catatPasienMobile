@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, Alert, TouchableOpacity } from 'react-native'; // Tambahkan TouchableOpacity
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore/lite';
+import { getFirestore, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore/lite';
+import { getStorage, ref, deleteObject } from 'firebase/storage';
 import { useRoute } from '@react-navigation/native';
-import {app} from '../firebaseConfig';
+import { app } from '../firebaseConfig';
 import { ScrollView } from 'react-native-gesture-handler';
 
 export default function DetailPesertaScreen() {
@@ -14,17 +15,18 @@ export default function DetailPesertaScreen() {
   const [detailData, setDetailData] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const q = query(dataPasien, where('nik', '==', idPeserta));
-      const data = await getDocs(q);
-      if (!data.empty) {
-        const details = data.docs.map((doc) => doc.data());
-        setDetailData(details[0]); // Ambil data pertama (seharusnya hanya ada satu dokumen dengan NIK yang cocok)
-      }
-    };
-
     fetchData(); // Panggil fungsi fetchData saat komponen dirender pertama kali
   }, [idPeserta]);
+
+  const fetchData = async () => {
+    const q = query(dataPasien, where('nik', '==', idPeserta));
+    const data = await getDocs(q);
+    if (!data.empty) {
+      const details = data.docs.map((doc) => doc.data());
+      setDetailData(details[0]); // Ambil data pertama (seharusnya hanya ada satu dokumen dengan NIK yang cocok)
+    }
+  };
+
 
   if (!detailData) {
     return (
@@ -45,6 +47,41 @@ export default function DetailPesertaScreen() {
       return 'UNKNOWN'; // Atau return nilai default, misalnya 'UNKNOWN'
     }
   }
+
+  const handleDelete = async (createdAt) => {
+    Alert.alert(
+      'Konfirmasi Hapus',
+      'Apakah Anda yakin ingin menghapus data ini?',
+      [
+        {
+          text: 'Batal',
+          style: 'cancel',
+        },
+        {
+          text: 'Hapus',
+          onPress: async () => {
+            try {
+              // Hapus data dari Firestore
+              await deleteDoc(doc(db, 'dataPasien', idPeserta));
+
+              const createdAtFormatted = new Date(detailData.createdAt).toLocaleString();
+              const ktpWithCreatedAt = `ktp${createdAtFormatted}`;
+              // Hapus gambar dari Firebase Storage
+              const storage = getStorage(app);
+              const storageRef = ref(storage, `fotoKTP/${ktpWithCreatedAt}`);
+              await deleteObject(storageRef);
+
+              // Kembali ke halaman sebelumnya atau halaman lain sesuai kebutuhan
+              navigation.goBack();
+            } catch (error) {
+              console.error('Error deleting data: ', error);
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
 
   return (
     <SafeAreaProvider>
@@ -104,7 +141,9 @@ export default function DetailPesertaScreen() {
                 <Text>{detailData.pekerjaan}</Text>
               </View>
               <View style={{margin:10}}>
-                
+                <TouchableOpacity style={styles.deleteButton}>
+                  <Text style={{ color: 'white' }}>Hapus Data</Text>
+                </TouchableOpacity>
               </View>
             </View>
           {/* Tampilkan data lainnya sesuai kebutuhan */}
@@ -133,5 +172,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginVertical: 10,
+  },
+  deleteButton: {
+    backgroundColor: 'red',
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 5,
+    marginTop: 20,
   },
 });
