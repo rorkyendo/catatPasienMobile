@@ -17,7 +17,7 @@ import { Camera } from 'expo-camera';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Dimensions } from 'react-native';
 import {app} from '../firebaseConfig';
-import { addDoc, getFirestore, collection, getDocs } from 'firebase/firestore/lite';
+import { collection, getFirestore, query, where, getDocs, addDoc } from 'firebase/firestore/lite';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import * as ImagePicker from 'expo-image-picker'
@@ -213,14 +213,26 @@ export default function CatatPeserta({ navigation }) {
       createdAt: today
     };
 
+    const dataPasienRef = collection(db, 'dataPasien');
+    const q = query(dataPasienRef, where('nik', '==', nik));
+  
     try {
-      alert("Loading.. Data sedang disimpan..")
-      const docRef = await addDoc(collection(db, "dataPasien"), data);
-      console.log("Document written with ID: ", docRef.id);
-      alert('Data berhasil disimpan');
-      navigation.navigate('Home');
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        // Jika terdapat data dengan NIK yang sama, tampilkan pesan kesalahan
+        alert('Data dengan NIK ini sudah ada di database. Tidak dapat menyimpan data duplikat.');
+      } else {
+        // Jika tidak ada data dengan NIK yang sama, simpan data ke database
+        alert('Loading.. Data sedang disimpan..');
+        const docRef = await addDoc(dataPasienRef, data);
+        console.log('Document written with ID: ', docRef.id);
+        alert('Data berhasil disimpan');
+        navigation.navigate('Home');
+      }
     } catch (e) {
-      console.error("Error adding document: ", e);
+      console.error('Error checking document: ', e);
+      // Tampilkan pesan kesalahan jika terjadi error saat pengecekan data
+      alert('Terjadi kesalahan saat memeriksa data. Silakan coba lagi.');
     }
 
   }
