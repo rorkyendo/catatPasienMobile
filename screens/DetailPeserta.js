@@ -1,103 +1,137 @@
-// screens/HomeScreen.js
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore/lite';
+import { useRoute } from '@react-navigation/native';
 import {app} from '../firebaseConfig';
-import { getFirestore, collection, query, where, getDocs} from "firebase/firestore";
 import { ScrollView } from 'react-native-gesture-handler';
 
 export default function DetailPesertaScreen() {
+  const route = useRoute();
+  const { idPeserta } = route.params; // Dapatkan NIK dari parameter navigasi
   const db = getFirestore(app);
-  const dataPasien = collection(db, "dataPasien");
-  const [querySnapshot, setSnapShot] = useState([]);
+  const dataPasien = collection(db, 'dataPasien');
+  const [detailData, setDetailData] = useState(null);
 
   useEffect(() => {
-    const q = query(dataPasien);
-    getData(q)
-  }, []);
+    const fetchData = async () => {
+      const q = query(dataPasien, where('nik', '==', idPeserta));
+      const data = await getDocs(q);
+      if (!data.empty) {
+        const details = data.docs.map((doc) => doc.data());
+        setDetailData(details[0]); // Ambil data pertama (seharusnya hanya ada satu dokumen dengan NIK yang cocok)
+      }
+    };
 
-  async function getData(q){
-    const data = await getDocs(q)
-    var arrayData = []
-    var i = 0;
-    data.forEach((docs) => {
-      let setData = {}
-      setData['nama'] = docs.data().nama
-      setData['nik'] = docs.data().nik
-      setData['pekerjaan'] = docs.data().pekerjaan
-      setData['tempat_lahir'] = docs.data().tempat_lahir
-      setData['agama'] = docs.data().agama
-      setData['alamat'] = docs.data().alamat
-      setData['goldar'] = docs.data().goldar
-      setData['jenkel'] = docs.data().jenkel
-      setData['kecamatan'] = docs.data().kecamatan
-      setData['kelurahan'] = docs.data().kelurahan
-      arrayData[i] = setData;
-      i++
-    });
-    setSnapShot(arrayData)
+    fetchData(); // Panggil fungsi fetchData saat komponen dirender pertama kali
+  }, [idPeserta]);
+
+  if (!detailData) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+      </View>
+    );
   }
 
-  const showDatePicker = () => {
-    setDatePickerVisibility(true);
-  };
+  function cleanGenderData(inputGender) {
+    const lowerCaseGender = inputGender.toLowerCase();
+    if (lowerCaseGender.includes('laki')) {
+      return 'LAKI-LAKI';
+    } else if (lowerCaseGender.includes('perempuan')) {
+      return 'PEREMPUAN';
+    } else {
+      // Jika input tidak sesuai dengan format standar, kembalikan nilai kosong atau sesuai kebutuhan
+      return 'UNKNOWN'; // Atau return nilai default, misalnya 'UNKNOWN'
+    }
+  }
 
-  const hideDatePicker = () => {
-    setDatePickerVisibility(false);
-  };
-
-  const handleConfirm = (date) => {
-    setTglLahir(date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate());
-    hideDatePicker();
-  };
-  
   return (
     <SafeAreaProvider>
       <ScrollView>
-          {querySnapshot.map((key, index) => (
-            <View key={index} style={{ 
-              flexDirection: "row", 
-              backgroundColor: "white", 
-              margin: 10, 
-              padding: 10, 
-              borderColor: 'black', 
-              borderRadius: 5,
-              elevation: 5, // Properti elevation untuk platform Android
-              shadowColor: 'black', // Warna bayangan untuk platform iOS
-              shadowOffset: { width: 0, height: 2 }, // Offset bayangan (x, y)
-              shadowOpacity: 0.2, // Opasitas bayangan
-              shadowRadius: 4, // Radius bayangan
-            }}>
-              <View style={{ flexDirection: 'column' }}>
-                  <Text style={{ color: "black", fontWeight: "bold" }}>Nama: {key.nama}</Text>
-                  <Text style={{ color: "black", fontWeight: "bold" }}>NIK: {key.nik}</Text>
+        <View style={styles.container}>
+            <View style={{flex:1,flexDirection:'column'}}>
+              <View style={{alignContent:"center"}}>
+                <Text style={{textAlign:"center",fontSize:18,fontWeight:'bold'}}>FOTO KTP</Text>
+                <Image
+                  source={{ uri: detailData.fileKtp }}
+                  style={{
+                    width: "auto", // Width of the bounding box
+                    height: 240, // Height of the bounding box
+                    resizeMode: 'cover', // Make sure the image fills the specified dimensions
+                  }}
+                />
+                <Text style={{textAlign:"center",fontSize:18,fontWeight:'bold',marginTop:5}}>Data Peserta</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>NIK :</Text>
+                <Text>{detailData.nik}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Nama :</Text>
+                <Text>{detailData.nama}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Tempat / Tgl Lahir :</Text>
+                <Text>{detailData.tempat_lahir} / {detailData.tgl_lahir.replaceAll('/','-')}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Jenis Kelamin :</Text>
+                <Text>{cleanGenderData(detailData.jenkel)}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Golongan Darah :</Text>
+                <Text>{detailData.goldar}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Alamat :</Text>
+                <Text>{detailData.alamat}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Kelurahan/Desa :</Text>
+                <Text>{detailData.kelurahan}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Kecamatan :</Text>
+                <Text>{detailData.kecamatan}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Agama :</Text>
+                <Text>{detailData.agama}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Pekerjaan :</Text>
+                <Text>{detailData.pekerjaan}</Text>
+              </View>
+              <View style={{margin:10}}>
+                
               </View>
             </View>
-          ))}
+          {/* Tampilkan data lainnya sesuai kebutuhan */}
+        </View>
       </ScrollView>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    borderRadius: 4,
-    marginTop: 10,
-    padding: 10,
+  container: {
+    flexDirection: "row", 
+    backgroundColor: "white", 
+    margin: 10, 
+    padding: 10, 
+    borderColor: 'black', 
+    borderRadius: 5,
+    elevation: 5, // Properti elevation untuk platform Android
+    shadowColor: 'black', // Warna bayangan untuk platform iOS
+    shadowOffset: { width: 0, height: 2 }, // Offset bayangan (x, y)
+    shadowOpacity: 0.2, // Opasitas bayangan
+    shadowRadius: 4, // Radius bayangan
+    width: 'auto'
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  closeButton: {
-    color: 'white',
+  label: {
     fontSize: 18,
     fontWeight: 'bold',
-    backgroundColor: '#008B8B',
-    padding: 10,
-    textAlign: 'center',
+    marginVertical: 10,
   },
 });
