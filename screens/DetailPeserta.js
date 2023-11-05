@@ -7,7 +7,7 @@ import { useRoute } from '@react-navigation/native';
 import { app } from '../firebaseConfig';
 import { ScrollView } from 'react-native-gesture-handler';
 
-export default function DetailPesertaScreen() {
+export default function DetailPesertaScreen({navigation}) {
   const route = useRoute();
   const { idPeserta } = route.params; // Dapatkan NIK dari parameter navigasi
   const db = getFirestore(app);
@@ -48,7 +48,7 @@ export default function DetailPesertaScreen() {
     }
   }
 
-  const handleDelete = async (createdAt) => {
+  const handleDelete = async (detailData) => {
     Alert.alert(
       'Konfirmasi Hapus',
       'Apakah Anda yakin ingin menghapus data ini?',
@@ -61,18 +61,23 @@ export default function DetailPesertaScreen() {
           text: 'Hapus',
           onPress: async () => {
             try {
-              // Hapus data dari Firestore
-              await deleteDoc(doc(db, 'dataPasien', idPeserta));
-
-              const createdAtFormatted = new Date(detailData.createdAt).toLocaleString();
-              const ktpWithCreatedAt = `ktp${createdAtFormatted}`;
-              // Hapus gambar dari Firebase Storage
-              const storage = getStorage(app);
-              const storageRef = ref(storage, `fotoKTP/${ktpWithCreatedAt}`);
-              await deleteObject(storageRef);
-
-              // Kembali ke halaman sebelumnya atau halaman lain sesuai kebutuhan
-              navigation.goBack();
+              const q = query(dataPasien, where('nik', '==', detailData.nik));
+              const querySnapshot = await getDocs(q);
+  
+              if (!querySnapshot.empty) {
+                const docRef = querySnapshot.docs[0].ref; // Dapatkan referensi dokumen dari hasil query
+                await deleteDoc(docRef); // Hapus dokumen dari Firestore
+  
+                const createdAtFormatted = new Date(detailData.createdAt).getTime();
+                const ktpWithCreatedAt = `ktp${createdAtFormatted}`;
+                const storage = getStorage(app);
+                const storageRef = ref(storage, `fotoKTP/${ktpWithCreatedAt}`);
+                await deleteObject(storageRef);
+  
+                navigation.goBack();
+              } else {
+                Alert.alert('Error', 'Data tidak ditemukan.');
+              }
             } catch (error) {
               console.error('Error deleting data: ', error);
             }
@@ -141,7 +146,9 @@ export default function DetailPesertaScreen() {
                 <Text>{detailData.pekerjaan}</Text>
               </View>
               <View style={{margin:10}}>
-                <TouchableOpacity style={styles.deleteButton}>
+                <TouchableOpacity style={styles.deleteButton}
+                  onPress={() => handleDelete(detailData)}
+                >
                   <Text style={{ color: 'white' }}>Hapus Data</Text>
                 </TouchableOpacity>
               </View>
