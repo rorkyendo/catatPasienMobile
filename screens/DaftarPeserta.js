@@ -1,6 +1,6 @@
 // screens/HomeScreen.js
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Button, TextInput, Pressable, ActivityIndicator } from 'react-native'; // Tambahkan ActivityIndicator
+import { View, Text, StyleSheet, Button, TextInput, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {app} from '../firebaseConfig';
 import { getFirestore, collection, query, where, getDocs} from "firebase/firestore";
@@ -15,6 +15,7 @@ export default function DaftarPesertaScreen({navigation}) {
   const [tglDibuat, setTglDibuat] = useState(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // State untuk mengontrol indikator loading
+  const [isRefreshing, setIsRefreshing] = useState(false); // State untuk mengontrol indikator refresh
 
   async function getData(q) {
     setIsLoading(true);
@@ -71,6 +72,7 @@ export default function DaftarPesertaScreen({navigation}) {
       console.error("Error fetching data: ", error);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false); // Hentikan indikator refresh setelah selesai memperbarui data
     }
   }
   
@@ -95,6 +97,12 @@ export default function DaftarPesertaScreen({navigation}) {
     }
     setTglDibuat(date.getFullYear()+"-"+Number(date.getMonth()+1)+"-"+tgl);
     hideDatePicker();
+  };
+
+  const refreshData = async () => {
+    setIsRefreshing(true); // Menetapkan indikator refresh ke true saat mulai merefresh data
+    const q = query(collection(db, 'dataPasien'));
+    await getData(q);
   };
   
   return (
@@ -130,7 +138,11 @@ export default function DaftarPesertaScreen({navigation}) {
           />
         </View>
       </View>
-      <ScrollView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={refreshData} /> // Properti onRefresh untuk merefresh data
+        }
+      >
           {isLoading && (
             <View style={{
               flexDirection: "row", 

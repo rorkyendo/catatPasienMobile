@@ -43,7 +43,7 @@ export default function CatatPeserta({ navigation }) {
   const [pekerjaan, setPekerjaan] = useState('');
   const [hasPermission, setHasPermission] = useState(null);
   const [ktpImage, setKtpImage] = useState(null);
-  const [filename, setFilename] = useState(null);
+  const [namaFile, setNamaFile] = useState('');
   const db = getFirestore(app);
 
   useEffect(() => {
@@ -62,41 +62,56 @@ export default function CatatPeserta({ navigation }) {
       });
       const source = {uri: result.assets[0].uri}
       setKtpImage(source.uri)
-      uploadGambar(source.uri)
+      uploadGambar()
   }; 
   
   const uploadToFirebase = async () => {
-    setUploading(true)
+    console.log('Starting upload to Firebase...');
+    setUploading(true);
     const storage = getStorage();
     const localTime = new Date().getTime();
-    const storageRef = ref(storage, 'fotoKTP/ktp'+localTime);
-    setFilename('fotoKTP/ktp'+localTime);
+    const storageRef = ref(storage, 'fotoKTP/ktp' + localTime);
     try {
-        const blobFile = await uriToBlob(ktpImage)
-        // 'file' comes from the Blob or File API
-        const uploadTask = uploadBytesResumable(storageRef, blobFile);
-        uploadTask.on('state_changed', 
+      const blobFile = await uriToBlob(ktpImage);
+      const uploadTask = uploadBytesResumable(storageRef, blobFile);
+  
+      uploadTask.on(
+        'state_changed',
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           console.log('Upload is ' + progress.toFixed(2) + '% done');
-        }, 
+        },
         (error) => {
-          // Handle unsuccessful uploads
-        }, 
+          console.error('Error uploading to Firebase:', error);
+          setUploading(false);
+          // Handle error: menampilkan pesan kesalahan kepada pengguna
+          Alert.alert('Error', 'Gagal mengupload file. Silakan coba lagi.');
+        },
         () => {
           getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            console.log('Download URL received:', downloadURL);
             setAlamatFile(downloadURL);
-            simpanDataToFirebase();
+            console.log('Alamat File set to:', downloadURL);
+            if (downloadURL) {
+                const namaFile = "fotoKTP/ktp"+localTime;
+                setUploading(false);
+                console.log('Calling simpanDataToFirebase...');
+                simpanDataToFirebase(downloadURL,namaFile); // Panggil fungsi simpanDataToFirebase setelah upload selesai
+            } else {
+                console.log('Alamat File is not set correctly. Aborting.');
+                // Handle error: menampilkan pesan kesalahan kepada pengguna
+                Alert.alert('Error', 'Gagal mengatur alamat file. Silakan coba lagi.');
+            }
           });
         }
       );
-
     } catch (error) {
       console.error('Fetch error:', error);
+      setUploading(false);
     }
-    setUploading(false)
-  } 
-
+  };
+  
+  
   const uriToBlob = (uri) => {
     return new Promise((resolve, reject) => {
        const xhr = new XMLHttpRequest()
@@ -112,13 +127,13 @@ export default function CatatPeserta({ navigation }) {
    
        xhr.send(null)})}
 
-  function uploadGambar(ktp) {
+  function uploadGambar() {
     let body = new FormData();
     
     alert("Sistem sedang melakukan pengecekan KTP..")
 
     body.append('filename', {
-      uri: ktp,
+      uri: ktpImage,
       type: 'image/jpeg', // Ganti dengan tipe media yang sesuai jika perlu (contoh: image/png)
       name: 'ktp.jpg', // Ganti dengan nama berkas yang sesuai jika perlu
     });
@@ -199,7 +214,7 @@ export default function CatatPeserta({ navigation }) {
     uploadToFirebase()
   }
 
-  async function simpanDataToFirebase(){
+  async function simpanDataToFirebase(downloadURL,file){
     let today = new Date().toISOString().slice(0, 10);
     const data = {
       nik: nik,
@@ -213,8 +228,8 @@ export default function CatatPeserta({ navigation }) {
       kelurahan: kelurahan,
       kecamatan: kecamatan,
       agama: agama,
-      fileKtp: alamatFile,
-      filename:filename,
+      fileKtp: downloadURL,
+      nama_file:file,
       createdAt: today
     };
 

@@ -68,7 +68,7 @@ export default function DetailPesertaScreen({navigation}) {
                 const docRef = querySnapshot.docs[0].ref; // Dapatkan referensi dokumen dari hasil query
                 await deleteDoc(docRef); // Hapus dokumen dari Firestore  
                 const storage = getStorage(app);
-                const storageRef = ref(storage, detailData.filename);
+                const storageRef = ref(storage, detailData.nama_file);
                 await deleteObject(storageRef);
   
                 navigation.goBack();
