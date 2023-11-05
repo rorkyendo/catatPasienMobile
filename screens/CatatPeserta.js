@@ -85,6 +85,7 @@ export default function CatatPeserta({ navigation }) {
         () => {
           getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
             setAlamatFile(downloadURL);
+            simpanDataToFirebase();
           });
         }
       );
@@ -121,7 +122,7 @@ export default function CatatPeserta({ navigation }) {
       name: 'ktp.jpg', // Ganti dengan nama berkas yang sesuai jika perlu
     });
   
-    fetch('http://192.168.204.30:8080/scan', {
+    fetch('http://192.168.86.225:8080/scan', {
         method: 'POST',
         body: body,
         headers: {
@@ -195,7 +196,9 @@ export default function CatatPeserta({ navigation }) {
     
   async function simpanData(){
     uploadToFirebase()
+  }
 
+  async function simpanDataToFirebase(){
     let today = new Date().toISOString().slice(0, 10);
     const data = {
       nik: nik,
@@ -234,7 +237,6 @@ export default function CatatPeserta({ navigation }) {
       // Tampilkan pesan kesalahan jika terjadi error saat pengecekan data
       alert('Terjadi kesalahan saat memeriksa data. Silakan coba lagi.');
     }
-
   }
 
   const showDatePicker = () => {

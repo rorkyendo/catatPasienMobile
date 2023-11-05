@@ -41,7 +41,7 @@ export default function DaftarPesertaScreen({navigation}) {
         const searchName = nama;
         const searchDate = tglDibuat;
         if(searchName && searchDate){
-          if(searchName == setData['nama'] && searchDate == setData['createdAt']){
+          if(setData['nama'].includes(searchName) && searchDate == setData['createdAt']){
             arrayData[i] = setData;
             i++;
           }else{
@@ -55,7 +55,7 @@ export default function DaftarPesertaScreen({navigation}) {
             alert("Data tidak ditemukan")
           }  
         }else if(searchName){
-          if(searchName == setData['nama']){
+          if(setData['nama'].includes(searchName)){
             arrayData[i] = setData;
             i++;
           }else{
