@@ -66,12 +66,9 @@ export default function DetailPesertaScreen({navigation}) {
   
               if (!querySnapshot.empty) {
                 const docRef = querySnapshot.docs[0].ref; // Dapatkan referensi dokumen dari hasil query
-                await deleteDoc(docRef); // Hapus dokumen dari Firestore
-  
-                const createdAtFormatted = new Date(detailData.createdAt).getTime();
-                const ktpWithCreatedAt = `ktp${createdAtFormatted}`;
+                await deleteDoc(docRef); // Hapus dokumen dari Firestore  
                 const storage = getStorage(app);
-                const storageRef = ref(storage, `fotoKTP/${ktpWithCreatedAt}`);
+                const storageRef = ref(storage, detailData.filename);
                 await deleteObject(storageRef);
   
                 navigation.goBack();

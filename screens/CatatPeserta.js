@@ -43,6 +43,7 @@ export default function CatatPeserta({ navigation }) {
   const [pekerjaan, setPekerjaan] = useState('');
   const [hasPermission, setHasPermission] = useState(null);
   const [ktpImage, setKtpImage] = useState(null);
+  const [filename, setFilename] = useState(null);
   const db = getFirestore(app);
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export default function CatatPeserta({ navigation }) {
     const storage = getStorage();
     const localTime = new Date().getTime();
     const storageRef = ref(storage, 'fotoKTP/ktp'+localTime);
-
+    setFilename('fotoKTP/ktp'+localTime);
     try {
         const blobFile = await uriToBlob(ktpImage)
         // 'file' comes from the Blob or File API
@@ -213,6 +214,7 @@ export default function CatatPeserta({ navigation }) {
       kecamatan: kecamatan,
       agama: agama,
       fileKtp: alamatFile,
+      filename:filename,
       createdAt: today
     };
 
