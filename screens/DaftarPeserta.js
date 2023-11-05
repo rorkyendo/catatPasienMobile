@@ -88,7 +88,12 @@ export default function DaftarPesertaScreen({navigation}) {
   };
 
   const handleConfirm = (date) => {
-    setTglDibuat(date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate());
+    if(date.getDate() < 10){
+      var tgl = "0"+date.getDate()
+    }else{
+      var tgl = date.getDate()
+    }
+    setTglDibuat(date.getFullYear()+"-"+Number(date.getMonth()+1)+"-"+tgl);
     hideDatePicker();
   };
   
