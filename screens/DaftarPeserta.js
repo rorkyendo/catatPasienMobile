@@ -45,22 +45,16 @@ export default function DaftarPesertaScreen({navigation}) {
           if(setData['nama'].includes(searchName) && searchDate == setData['createdAt']){
             arrayData[i] = setData;
             i++;
-          }else{
-            alert("Data tidak ditemukan")
           }  
         }else if(searchDate){
           if(searchDate == setData['createdAt']){
             arrayData[i] = setData;
             i++;
-          }else{
-            alert("Data tidak ditemukan")
           }  
         }else if(searchName){
           if(setData['nama'].includes(searchName)){
             arrayData[i] = setData;
             i++;
-          }else{
-            alert("Data tidak ditemukan")
           }  
         }else{
           arrayData[i] = setData;
