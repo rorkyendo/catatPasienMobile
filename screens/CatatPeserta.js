@@ -182,15 +182,15 @@ export default function CatatPeserta({ navigation }) {
     setTglLahir(formattedDate);
   }
 
-  function cleanedJenkel(jenkel){
-      if (jenkel.includes("LAKI")) {
+  function cleanedJenkel(jenkel) {
+    if (jenkel.includes("LAKI")) {
         const hasil = jenkel.replace("LAKI", "LAKI-LAKI");
         setJenisKelamin(hasil);
-      } else if (data.jenis_kelamin.includes("PEREM")) {
+    } else if (jenkel.includes("PEREM")) {
         const hasil = jenkel.replace("PEREM", "PEREMPUAN");
         setJenisKelamin(hasil);
-      }
-  }
+    }
+}
 
   function cleanTempatLahir(ttl){
       setTempatLahir(ttl);
@@ -223,15 +223,15 @@ export default function CatatPeserta({ navigation }) {
       tgl_lahir: tglLahir,
       goldar: golonganDarah,
       pekerjaan: pekerjaan,
-      jenkel: jenisKelamin,
+      jenkel: jenisKelamin,  // Update this line
       alamat: alamat,
       kelurahan: kelurahan,
       kecamatan: kecamatan,
       agama: agama,
       fileKtp: downloadURL,
-      nama_file:file,
+      nama_file: file,
       createdAt: today
-    };
+  };
 
     const dataPasienRef = collection(db, 'dataPasien');
     const q = query(dataPasienRef, where('nik', '==', nik));
