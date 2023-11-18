@@ -160,7 +160,7 @@ export default function CatatPeserta({ navigation }) {
         cleanTempatLahir(resp.data.tempat_tanggal_lahir)
         cleanedJenkel(resp.data.jenis_kelamin)
         cleanedGolDar(resp.data.golongan_darah)
-        setAgama(resp.data.agama)
+        cleanedAgama(resp.data.agama)
         setAlamat(resp.data.alamat)
         setKecamatan(resp.data.kecamatan)
         setKelurahan(resp.data.kelurahan_atau_desa)
@@ -190,7 +190,24 @@ export default function CatatPeserta({ navigation }) {
         const hasil = "PEREMPUAN";
         setJenisKelamin(hasil);
     }
-}
+  }
+
+  function cleanedAgama(agama) {
+    if (agama.includes("IS")) {
+        const hasil = "ISLAM";
+        setAgama(hasil);
+    } else if (agama.includes("KR")) {
+        const hasil = "KRISTEN";
+        setAgama(hasil);
+    } else if (agama.includes("HI")) {
+      const hasil = "HINDU";
+      setAgama(hasil);
+    } else if (agama.includes("BU")) {
+      const hasil = "BUDDHA";
+      setAgama(hasil);
+    }
+  }
+
 
   function cleanTempatLahir(ttl){
       setTempatLahir(ttl);
