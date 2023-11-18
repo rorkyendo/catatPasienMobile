@@ -138,7 +138,7 @@ export default function CatatPeserta({ navigation }) {
       name: 'ktp.jpg', // Ganti dengan nama berkas yang sesuai jika perlu
     });
   
-    fetch('http://192.168.86.225:8080/scan', {
+    fetch('http://192.168.137.30:8080/scan', {
         method: 'POST',
         body: body,
         headers: {
@@ -184,10 +184,10 @@ export default function CatatPeserta({ navigation }) {
 
   function cleanedJenkel(jenkel) {
     if (jenkel.includes("LAKI")) {
-        const hasil = jenkel.replace("LAKI", "LAKI-LAKI");
+        const hasil = "LAKI-LAKI";
         setJenisKelamin(hasil);
     } else if (jenkel.includes("PEREM")) {
-        const hasil = jenkel.replace("PEREM", "PEREMPUAN");
+        const hasil = "PEREMPUAN";
         setJenisKelamin(hasil);
     }
 }
