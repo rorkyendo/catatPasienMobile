@@ -63,7 +63,11 @@ export default function CatatPeserta({ navigation }) {
       const source = {uri: result.assets[0].uri}
       setKtpImage(source.uri)
       uploadGambar()
-  }; 
+  };
+  
+  const resendImage = async () => {
+    uploadGambar()
+  }
   
   const uploadToFirebase = async () => {
     console.log('Starting upload to Firebase...');
@@ -138,7 +142,7 @@ export default function CatatPeserta({ navigation }) {
       name: 'ktp.jpg', // Ganti dengan nama berkas yang sesuai jika perlu
     });
   
-    fetch('http://192.168.137.30:8080/scan', {
+    fetch('http://192.168.198.158:8080/scan', {
         method: 'POST',
         body: body,
         headers: {
@@ -193,16 +197,16 @@ export default function CatatPeserta({ navigation }) {
   }
 
   function cleanedAgama(agama) {
-    if (agama.includes("IS")) {
+    if (agama.includes("ISLAM")) {
         const hasil = "ISLAM";
         setAgama(hasil);
     } else if (agama.includes("KR")) {
         const hasil = "KRISTEN";
         setAgama(hasil);
-    } else if (agama.includes("HI")) {
+    } else if (agama.includes("NDU")) {
       const hasil = "HINDU";
       setAgama(hasil);
-    } else if (agama.includes("BU")) {
+    } else if (agama.includes("DHA")) {
       const hasil = "BUDDHA";
       setAgama(hasil);
     }
@@ -212,7 +216,7 @@ export default function CatatPeserta({ navigation }) {
   function cleanTempatLahir(ttl){
       setTempatLahir(ttl);
       const data = ttl.split("r");
-    if(data){
+    if(Array.isArray(data) === 'true'){
       const cleanedData = data[1].split(",");
       setTempatLahir(cleanedData[0].replace(":",""));
     }
@@ -220,8 +224,8 @@ export default function CatatPeserta({ navigation }) {
 
   function cleanedGolDar(goldar){
     setGolonganDarah(goldar);
-    const data = goldar.split("h");
-    if(data){
+    const data = goldar.split("ra");
+    if(Array.isArray(data) === 'true'){
       const cleanedData = data[1].split(",");
       setGolonganDarah(cleanedData[0].replace(":",""));
     }
@@ -331,7 +335,7 @@ export default function CatatPeserta({ navigation }) {
                   height: 240, // Height of the bounding box
                   resizeMode: 'cover', // Make sure the image fills the specified dimensions
                 }}
-              />
+              />            
               )}
               <TouchableOpacity
                 style={{
@@ -346,6 +350,21 @@ export default function CatatPeserta({ navigation }) {
                   Ambil Gambar KTP
                 </Text>
               </TouchableOpacity>
+              {ktpImage && (
+                <TouchableOpacity
+                style={{
+                  backgroundColor: 'orange',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: 50,
+                }}
+                onPress={() => resendImage()}
+              >
+                <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+                  Proses Ulang KTP
+                </Text>
+              </TouchableOpacity>
+              )}
               {/* Render the camera view inside a modal */}
             </View>
             <TextInput
@@ -378,13 +397,11 @@ export default function CatatPeserta({ navigation }) {
                 onCancel={hideDatePicker}
               />
             </View>
-
             <Picker
               selectedValue={jenisKelamin}
               onValueChange={(itemValue) => setJenisKelamin(itemValue)}
               style={styles.input}
             >
-
               <Picker.Item label="LAKI-LAKI" value="LAKI-LAKI" />
               <Picker.Item label="PEREMPUAN" value="PEREMPUAN" />
             </Picker>
