@@ -209,6 +209,9 @@ export default function CatatPeserta({ navigation }) {
     } else if (agama.includes("DHA")) {
       const hasil = "BUDDHA";
       setAgama(hasil);
+    } else if (agama.includes("THO")) {
+      const hasil = "KATHOLIK";
+      setAgama(hasil);
     }
   }
 
@@ -436,6 +439,7 @@ export default function CatatPeserta({ navigation }) {
             >
               <Picker.Item label="ISLAM" value="ISLAM" />
               <Picker.Item label="KRISTEN" value="KRISTEN" />
+              <Picker.Item label="KATHOLIK" value="KATHOLIK" />
               <Picker.Item label="HINDU" value="HINDU" />
               <Picker.Item label="BUDDHA" value="BUDDHA" />
               {/* Tambahkan opsi agama lainnya sesuai kebutuhan */}
