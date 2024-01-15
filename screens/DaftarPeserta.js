@@ -10,6 +10,7 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 export default function DaftarPesertaScreen({navigation}) {
   const db = getFirestore(app);
   const [nama,setNama] = useState(null);
+  const [nik,setNIK] = useState(null);
   const dataPasien = collection(db, "dataPasien");
   const [querySnapshot, setSnapShot] = useState([]);
   const [tglDibuat, setTglDibuat] = useState(null);
@@ -40,9 +41,10 @@ export default function DaftarPesertaScreen({navigation}) {
   
         // Filter data berdasarkan pencarian nama dan tanggal pembuatan
         const searchName = nama;
+        const searchNik = nik;
         const searchDate = tglDibuat;
         if(searchName && searchDate){
-          if(setData['nama'].includes(searchName) && searchDate == setData['createdAt']){
+          if(setData['nama'].includes(searchName) && searchDate == setData['createdAt'] && setData['nik'].includes(searchNik)){
             arrayData[i] = setData;
             i++;
           }  
@@ -55,7 +57,12 @@ export default function DaftarPesertaScreen({navigation}) {
           if(setData['nama'].includes(searchName)){
             arrayData[i] = setData;
             i++;
-          }  
+          }
+        }else if(searchNik){
+          if(setData['nik'].includes(searchNik)){
+            arrayData[i] = setData;
+            i++;
+          }    
         }else{
           arrayData[i] = setData;
           i++;
@@ -73,7 +80,7 @@ export default function DaftarPesertaScreen({navigation}) {
   useEffect(() => {
     const q = query(collection(db, "dataPasien"));
     getData(q);
-  }, [nama, tglDibuat]);
+  }, [nama, nik, tglDibuat]);
 
   const showDatePicker = () => {
     setDatePickerVisibility(true);
@@ -117,13 +124,26 @@ export default function DaftarPesertaScreen({navigation}) {
       }}>
         <View style={{flex:1}}>
           <TextInput
+            placeholder="Cari berdasarkan NIK"
+            value={nik}
+            onChangeText={(text) => setNIK(text)}
+            style={styles.input}
+          />
+          <TextInput
             placeholder="Cari berdasarkan nama"
             value={nama}
             onChangeText={(text) => setNama(text)}
             style={styles.input}
           />
-          <Text style={styles.input}>{tglDibuat}</Text>
-          <Button title="Pilih Tanggal Masuk" onPress={showDatePicker} />
+          <TextInput
+            placeholder="Pilih tanggal masuk"
+            value={tglDibuat}
+            style={[styles.input,{color:"black"}]}
+            editable = {false}
+          />
+          <View style={{paddingTop:10}} >
+            <Button title="Pilih Tanggal Masuk" onPress={showDatePicker} />
+          </View>
           <DateTimePickerModal
             isVisible={isDatePickerVisible}
             mode="date"
