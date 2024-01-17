@@ -20,7 +20,10 @@ import {app} from '../firebaseConfig';
 import { collection, getFirestore, query, where, getDocs, addDoc } from 'firebase/firestore/lite';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import * as ImagePicker from 'expo-image-picker'
+import * as ImagePicker from 'expo-image-picker';
+import * as FaceDetector from 'expo-face-detector';
+import { ImageManipulator, manipulateAsync } from 'expo-image-manipulator';
+
 
 export default function CatatPeserta({ navigation }) {
   const [nik, setNIK] = useState('');
@@ -34,7 +37,6 @@ export default function CatatPeserta({ navigation }) {
   const [golonganDarah, setGolonganDarah] = useState('');
   const [alamat, setAlamat] = useState('');
 
-  const [alamatFile, setAlamatFile] = useState('');
   const [uploading, setUploading] = useState(false)
 
   const [kelurahan, setKelurahan] = useState('');
@@ -43,7 +45,15 @@ export default function CatatPeserta({ navigation }) {
   const [pekerjaan, setPekerjaan] = useState('');
   const [hasPermission, setHasPermission] = useState(null);
   const [ktpImage, setKtpImage] = useState(null);
+  const [faceImage, setFaceImage] = useState(null);
+  const [signatureImage, setSignatureImage] = useState(null);
   const [namaFile, setNamaFile] = useState('');
+  const [alamatFile, setAlamatFile] = useState('');
+  const [namaFileFoto, setNamaFileFoto] = useState('');
+  const [alamatFileFoto, setAlamatFileFoto] = useState('');
+  const [namaFileSign, setNamaFileSign] = useState('');
+  const [alamatFileSign, setAlamatFileSign] = useState('');
+
   const db = getFirestore(app);
 
   useEffect(() => {
@@ -63,10 +73,58 @@ export default function CatatPeserta({ navigation }) {
       const source = {uri: result.assets[0].uri}
       setKtpImage(source.uri)
       uploadGambar()
+      detectAndCropFace(source.uri)
   };
-  
+
+  const detectAndCropFace = async (ktpImage) => {
+    try {
+      const faces = await FaceDetector.detectFacesAsync(ktpImage, {
+        mode: FaceDetector.FaceDetectorMode.accurate,
+        detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,
+        runClassifications: FaceDetector.FaceDetectorClassifications.all,
+        minDetectionInterval: 1000, // Sesuaikan sesuai kebutuhan
+        tracking: true,
+      });
+
+      if (faces.faces.length > 0) {
+        const face = faces.faces[0];
+        const x = face.bounds.origin.x;
+        const y = face.bounds.origin.y;
+        const width = face.bounds.size.width;
+        const height = face.bounds.size.height;
+
+        // Crop the image
+        const croppedImage = await manipulateAsync(
+          ktpImage,
+          [{ crop: { originX: x, originY: y, width, height } }],
+          { compress: 1, format: 'jpeg', base64: false }
+        );
+
+        // Crop the signature
+        const croppedSignature = await manipulateAsync(
+          ktpImage,
+          [{ crop: { originX: x, originY: y+850, width, height } }],
+          { compress: 1, format: 'jpeg', base64: false }
+        );
+        
+
+        // Set the cropped image to the state
+        setFaceImage(croppedImage.uri);
+
+        // Set the cropped image to the state
+        setSignatureImage(croppedSignature.uri);
+
+      } else {
+        Alert.alert('Wajah pada ktp tidak terdeteksi');
+      }
+    } catch (error) {
+      console.error('Error detecting and cropping face:', error);
+      // Handle the error appropriately, e.g., show an error message to the user
+    }
+  };  
   const resendImage = async () => {
     uploadGambar()
+    detectAndCropFace(ktpImage)
   }
   
   const uploadToFirebase = async () => {
@@ -75,15 +133,21 @@ export default function CatatPeserta({ navigation }) {
     const storage = getStorage();
     const localTime = new Date().getTime();
     const storageRef = ref(storage, 'fotoKTP/ktp' + localTime);
+    const storageRefFoto = ref(storage, 'fotoKTP/foto' + localTime);
+    const storageRefSign = ref(storage, 'fotoKTP/sign' + localTime);
     try {
       const blobFile = await uriToBlob(ktpImage);
+      const blobFoto = await uriToBlob(faceImage);
+      const blobSign = await uriToBlob(signatureImage);
       const uploadTask = uploadBytesResumable(storageRef, blobFile);
+      const uploadTaskKTP = uploadBytesResumable(storageRefFoto, blobFoto);
+      const uploadTaskSIGN = uploadBytesResumable(storageRefSign, blobSign);
   
       uploadTask.on(
         'state_changed',
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log('Upload is ' + progress.toFixed(2) + '% done');
+          console.log('Upload ktp is ' + progress.toFixed(2) + '% done');
         },
         (error) => {
           console.error('Error uploading to Firebase:', error);
@@ -99,8 +163,6 @@ export default function CatatPeserta({ navigation }) {
             if (downloadURL) {
                 const namaFile = "fotoKTP/ktp"+localTime;
                 setUploading(false);
-                console.log('Calling simpanDataToFirebase...');
-                simpanDataToFirebase(downloadURL,namaFile); // Panggil fungsi simpanDataToFirebase setelah upload selesai
             } else {
                 console.log('Alamat File is not set correctly. Aborting.');
                 // Handle error: menampilkan pesan kesalahan kepada pengguna
@@ -109,6 +171,36 @@ export default function CatatPeserta({ navigation }) {
           });
         }
       );
+
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log('Upload ktp is ' + progress.toFixed(2) + '% done');
+        },
+        (error) => {
+          console.error('Error uploading to Firebase:', error);
+          setUploading(false);
+          // Handle error: menampilkan pesan kesalahan kepada pengguna
+          Alert.alert('Error', 'Gagal mengupload file. Silakan coba lagi.');
+        },
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            console.log('Download URL received:', downloadURL);
+            setAlamatFile(downloadURL);
+            console.log('Alamat File set to:', downloadURL);
+            if (downloadURL) {
+                const namaFile = "fotoKTP/ktp"+localTime;
+                setUploading(false);
+            } else {
+                console.log('Alamat File is not set correctly. Aborting.');
+                // Handle error: menampilkan pesan kesalahan kepada pengguna
+                Alert.alert('Error', 'Gagal mengatur alamat file. Silakan coba lagi.');
+            }
+          });
+        }
+      );
+
     } catch (error) {
       console.error('Fetch error:', error);
       setUploading(false);
@@ -141,39 +233,42 @@ export default function CatatPeserta({ navigation }) {
       type: 'image/jpeg', // Ganti dengan tipe media yang sesuai jika perlu (contoh: image/png)
       name: 'ktp.jpg', // Ganti dengan nama berkas yang sesuai jika perlu
     });
-  
-    fetch('http://192.168.198.158:8080/scan', {
-        method: 'POST',
-        body: body,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          // Jika diperlukan, Anda dapat menambahkan header lain di sini
-        },
-      })
-      .then(response => response.json())
-      .then(resp => {
-        setTimeout(() => {
-          alert("Gambar selesai di proses")
-        }, 100);
-        // Handle response dari API jika perlu
-        console.log('Response dari API:', resp);
-        setNama(resp.data.nama)
-        const nikNumbersOnly = resp.data.nik.replace(/\D/g, '');
-        setNIK(nikNumbersOnly)
-        tglLahirPasien(nikNumbersOnly)
-        cleanTempatLahir(resp.data.tempat_tanggal_lahir)
-        cleanedJenkel(resp.data.jenis_kelamin)
-        cleanedGolDar(resp.data.golongan_darah)
-        cleanedAgama(resp.data.agama)
-        setAlamat(resp.data.alamat)
-        setKecamatan(resp.data.kecamatan)
-        setKelurahan(resp.data.kelurahan_atau_desa)
-        setPekerjaan(resp.data.pekerjaan)
-      })
-      .catch(error => {
-        // Handle kesalahan jika terjadi
-        console.error('Error:', error);
-      });
+
+    // const faces = FaceDetection.detect(ktpImage, { landmarkMode: 'all' });
+    // setFaceData(faces);
+
+    // fetch('http://192.168.43.151:8080/scan', {
+    //     method: 'POST',
+    //     body: body,
+    //     headers: {
+    //       'Content-Type': 'multipart/form-data',
+    //       // Jika diperlukan, Anda dapat menambahkan header lain di sini
+    //     },
+    //   })
+    //   .then(response => response.json())
+    //   .then(resp => {
+    //     setTimeout(() => {
+    //       alert("Gambar selesai di proses")
+    //     }, 100);
+    //     // Handle response dari API jika perlu
+    //     console.log('Response dari API:', resp);
+    //     setNama(resp.data.nama)
+    //     const nikNumbersOnly = resp.data.nik.replace(/\D/g, '');
+    //     setNIK(nikNumbersOnly)
+    //     tglLahirPasien(nikNumbersOnly)
+    //     cleanTempatLahir(resp.data.tempat_tanggal_lahir)
+    //     cleanedJenkel(resp.data.jenis_kelamin)
+    //     cleanedGolDar(resp.data.golongan_darah)
+    //     cleanedAgama(resp.data.agama)
+    //     setAlamat(resp.data.alamat)
+    //     setKecamatan(resp.data.kecamatan)
+    //     setKelurahan(resp.data.kelurahan_atau_desa)
+    //     setPekerjaan(resp.data.pekerjaan)
+    //   })
+    //   .catch(error => {
+    //     // Handle kesalahan jika terjadi
+    //     console.error('Error:', error);
+    //   });
   }
 
   function tglLahirPasien(nik){
@@ -302,7 +397,7 @@ export default function CatatPeserta({ navigation }) {
               alignItems: 'center',
               backgroundColor: '#008B8B',
               width: '100%',
-              height: '15%',
+              height: '10%',
               borderBottomEndRadius: 60,
               borderBottomLeftRadius: 60,
             }}
@@ -329,17 +424,48 @@ export default function CatatPeserta({ navigation }) {
             </Text>
           </View>
           <View style={{ padding: 20, paddingBottom:35 }}>
-          <View style={{ flex: 1 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{fontSize:12,fontWeight:'bold'}}>FOTO KTP : </Text>
               {ktpImage && (
                 <Image
-                source={{ uri: ktpImage }}
-                style={{
-                  width: "auto", // Width of the bounding box
-                  height: 240, // Height of the bounding box
-                  resizeMode: 'cover', // Make sure the image fills the specified dimensions
-                }}
-              />            
+                  source={{ uri: ktpImage }}
+                  style={{
+                    width: "auto", // Width of the bounding box
+                    height: 240, // Height of the bounding box
+                    resizeMode: 'cover', // Make sure the image fills the specified dimensions
+                  }}
+                />            
               )}
+
+              <View style={{flexDirection:'row'}}>
+                <View style={{flex:2,marginLeft:20,marginTop:10,marginBottom:10}}>
+                  <Text style={{fontSize:12,fontWeight:'bold'}}>PAS FOTO : </Text>
+                  {faceImage && (
+                    <Image
+                    source={{ uri: faceImage }}
+                    style={{
+                      width: 100, // Width of the bounding box
+                      height: 100, // Height of the bounding box
+                      resizeMode: 'cover', // Make sure the image fills the specified dimensions
+                    }}
+                  />            
+                  )}
+                </View>
+                <View style={{flex:2,marginLeft:90,marginTop:10,marginBottom:10}}>
+                  <Text style={{fontSize:12,fontWeight:'bold'}}>TTD : </Text>
+                  {signatureImage && (
+                    <Image
+                    source={{ uri: signatureImage }}
+                    style={{
+                      width: 100, // Width of the bounding box
+                      height: 100, // Height of the bounding box
+                      resizeMode: 'cover', // Make sure the image fills the specified dimensions
+                    }}
+                  />            
+                  )}
+                </View>
+              </View>
+
               <TouchableOpacity
                 style={{
                   backgroundColor: '#008B8B',
@@ -368,7 +494,6 @@ export default function CatatPeserta({ navigation }) {
                 </Text>
               </TouchableOpacity>
               )}
-              {/* Render the camera view inside a modal */}
             </View>
             <TextInput
               placeholder="NIK"
