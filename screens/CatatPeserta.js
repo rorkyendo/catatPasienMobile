@@ -127,123 +127,6 @@ export default function CatatPeserta({ navigation }) {
     detectAndCropFace(ktpImage)
   }
   
-  const uploadToFirebase = async () => {
-    console.log('Starting upload to Firebase...');
-    setUploading(true);
-    const storage = getStorage();
-    const localTime = new Date().getTime();
-    const storageRef = ref(storage, 'fotoKTP/ktp' + localTime);
-    const storageRefFoto = ref(storage, 'fotoKTP/foto' + localTime);
-    const storageRefSign = ref(storage, 'fotoKTP/sign' + localTime);
-  
-    try {
-      const blobFile = await uriToBlob(ktpImage);
-      const blobFoto = await uriToBlob(faceImage);
-      const blobSign = await uriToBlob(signatureImage);
-  
-      const uploadTask = uploadBytesResumable(storageRef, blobFile);
-      const uploadTaskFoto = uploadBytesResumable(storageRefFoto, blobFoto);
-      const uploadTaskSign = uploadBytesResumable(storageRefSign, blobSign);
-  
-      // Handle main upload task (ktpImage)
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log('Upload ktp is ' + progress.toFixed(2) + '% done');
-        },
-        (error) => {
-          console.error('Error uploading to Firebase:', error);
-          setUploading(false);
-          Alert.alert('Error', 'Gagal mengupload file ktp. Silakan coba lagi.');
-        },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            console.log('Download URL received:', downloadURL);
-            setAlamatFile(downloadURL);
-            console.log('Alamat File set to:', downloadURL);
-            if (downloadURL) {
-              const namaFile = 'fotoKTP/ktp' + localTime;
-              setNamaFile(namaFile);
-              // Only call setUploading(false) once
-              setUploading(false);
-            } else {
-              console.log('Alamat File KTP is not set correctly. Aborting.');
-              Alert.alert('Error', 'Gagal mengatur alamat file KTP. Silakan coba lagi.');
-            }
-          });
-        }
-      );
-  
-      // Handle upload task foto
-      uploadTaskFoto.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log('Upload Foto is ' + progress.toFixed(2) + '% done');
-        },
-        (error) => {
-          console.error('Error uploading Foto to Firebase:', error);
-          setUploading(false);
-          Alert.alert('Error', 'Gagal mengupload Foto. Silakan coba lagi.');
-        },
-        () => {
-          getDownloadURL(uploadTaskFoto.snapshot.ref).then((downloadURL) => {
-            console.log('Download URL for Foto received:', downloadURL);
-            setAlamatFileFoto(downloadURL);
-            // Only call setUploading(false) once
-            setUploading(false);
-            // Handle success for Foto upload
-            if (downloadURL) {
-              const namaFile = 'fotoKTP/foto' + localTime;
-              setNamaFileFoto(namaFile);
-            } else {
-              console.log('Alamat File KTP is not set correctly. Aborting.');
-              Alert.alert('Error', 'Gagal mengatur alamat file Foto. Silakan coba lagi.');
-            }
-          });
-        }
-      );
-  
-      // Handle signature upload task
-      uploadTaskSign.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log('Upload signature is ' + progress.toFixed(2) + '% done');
-        },
-        (error) => {
-          console.error('Error uploading signature to Firebase:', error);
-          setUploading(false);
-          Alert.alert('Error', 'Gagal mengupload tanda tangan. Silakan coba lagi.');
-        },
-        () => {
-          getDownloadURL(uploadTaskSign.snapshot.ref).then((downloadURL) => {
-            console.log('Download URL for signature received:', downloadURL);
-            setAlamatFileSign(downloadURL);
-            // Only call setUploading(false) once
-            setUploading(false);
-            // Handle success for Signature upload
-            if (downloadURL) {
-              const namaFile = 'fotoKTP/sign' + localTime;
-              setNamaFileSign(namaFile);
-              simpanDataToFirebase();
-            } else {
-              console.log('Alamat File Sign is not set correctly. Aborting.');
-              Alert.alert('Error', 'Gagal mengatur alamat file Sign. Silakan coba lagi.');
-            }
-          });
-        }
-      );
-
-      simpanDataToFirebase();
-  
-    } catch (error) {
-      console.error('Fetch error:', error);
-      setUploading(false);
-    }
-  };
-  
   
   const uriToBlob = (uri) => {
     return new Promise((resolve, reject) => {
@@ -308,6 +191,7 @@ export default function CatatPeserta({ navigation }) {
       });
   }
 
+
   function tglLahirPasien(nik){
     const tgl = nik.substr(6, 2); // Mengambil karakter ke-1 dan ke-2 untuk tanggal
     const bln = nik.substr(8, 2); // Mengambil karakter ke-3 dan ke-4 untuk bulan
@@ -367,54 +251,209 @@ export default function CatatPeserta({ navigation }) {
   }
     
   async function simpanData(){
-    uploadToFirebase()
+    simpanDataToFirebase()
   }
 
-  async function simpanDataToFirebase(){
-    let today = new Date().toISOString().slice(0, 10);
-    const data = {
-      nik: nik,
-      nama: nama,
-      tempat_lahir: tempatLahir,
-      tgl_lahir: tglLahir,
-      goldar: golonganDarah,
-      pekerjaan: pekerjaan,
-      jenkel: jenisKelamin,  // Update this line
-      alamat: alamat,
-      kelurahan: kelurahan,
-      kecamatan: kecamatan,
-      agama: agama,
-      fileKtp: alamatFileSign,
-      fileFoto: alamatFileFoto,
-      fileSign: alamatFileSign,
-      nama_file: namaFile,
-      nama_file_foto: namaFileFoto,
-      nama_file_sign: namaFileSign,
-      createdAt: today
-  };
-
-    const dataPasienRef = collection(db, 'dataPasien');
-    const q = query(dataPasienRef, where('nik', '==', nik));
-  
+  async function simpanDataToFirebase() {
     try {
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        // Jika terdapat data dengan NIK yang sama, tampilkan pesan kesalahan
-        alert('Data dengan NIK ini sudah ada di database. Tidak dapat menyimpan data duplikat.');
+      // Wait for the uploads to complete
+      await uploadToFirebase();
+  
+      if (alamatFile && alamatFileFoto && alamatFileSign) {
+        let today = new Date().toISOString().slice(0, 10);
+        const data = {
+          nik: nik,
+          nama: nama,
+          tempat_lahir: tempatLahir,
+          tgl_lahir: tglLahir,
+          goldar: golonganDarah,
+          pekerjaan: pekerjaan,
+          jenkel: jenisKelamin,
+          alamat: alamat,
+          kelurahan: kelurahan,
+          kecamatan: kecamatan,
+          agama: agama,
+          fileKtp: alamatFile,
+          fileFoto: alamatFileFoto,
+          fileSign: alamatFileSign,
+          nama_file: namaFile,
+          nama_file_foto: namaFileFoto,
+          nama_file_sign: namaFileSign,
+          createdAt: today,
+        };
+  
+        const dataPasienRef = collection(db, 'dataPasien');
+        const q = query(dataPasienRef, where('nik', '==', nik));
+  
+        try {
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+            // Jika terdapat data dengan NIK yang sama, tampilkan pesan kesalahan
+            alert('Data dengan NIK ini sudah ada di database. Tidak dapat menyimpan data duplikat.');
+          } else {
+            // Jika tidak ada data dengan NIK yang sama, simpan data ke database
+            alert('Loading.. Data sedang disimpan..');
+            const docRef = await addDoc(dataPasienRef, data);
+            console.log('Document written with ID: ', docRef.id);
+            alert('Data berhasil disimpan');
+            navigation.navigate('Home');
+          }
+        } catch (e) {
+          console.error('Error checking document: ', e);
+          // Tampilkan pesan kesalahan jika terjadi error saat pengecekan data
+          alert('Terjadi kesalahan saat memeriksa data. Silakan coba lagi.');
+        }
       } else {
-        // Jika tidak ada data dengan NIK yang sama, simpan data ke database
-        alert('Loading.. Data sedang disimpan..');
-        const docRef = await addDoc(dataPasienRef, data);
-        console.log('Document written with ID: ', docRef.id);
-        alert('Data berhasil disimpan');
-        navigation.navigate('Home');
+        Alert.alert('Foto belum tersimpan');
       }
-    } catch (e) {
-      console.error('Error checking document: ', e);
-      // Tampilkan pesan kesalahan jika terjadi error saat pengecekan data
-      alert('Terjadi kesalahan saat memeriksa data. Silakan coba lagi.');
+    } catch (error) {
+      console.error('Error uploading to Firebase:', error);
+      // Handle error during upload
+      Alert.alert('Error', 'Gagal mengupload file. Silakan coba lagi.');
     }
   }
+  
+  const uploadToFirebase = async () => {
+    console.log('Starting upload to Firebase...');
+    setUploading(true);
+    const storage = getStorage();
+    const localTime = new Date().getTime();
+    const storageRef = ref(storage, 'fotoKTP/ktp' + localTime);
+    const storageRefFoto = ref(storage, 'fotoKTP/foto' + localTime);
+    const storageRefSign = ref(storage, 'fotoKTP/sign' + localTime);
+  
+    try {
+      const blobFile = await uriToBlob(ktpImage);
+      const blobFoto = await uriToBlob(faceImage);
+      const blobSign = await uriToBlob(signatureImage);
+  
+      const uploadTask = uploadBytesResumable(storageRef, blobFile);
+      const uploadTaskFoto = uploadBytesResumable(storageRefFoto, blobFoto);
+      const uploadTaskSign = uploadBytesResumable(storageRefSign, blobSign);
+  
+      // Promises to track completion of each upload task
+      const promises = [];
+  
+      // Handle main upload task (ktpImage)
+      promises.push(
+        new Promise((resolve) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              console.log('Upload ktp is ' + progress.toFixed(2) + '% done');
+            },
+            (error) => {
+              console.error('Error uploading to Firebase:', error);
+              setUploading(false);
+              Alert.alert('Error', 'Gagal mengupload file ktp. Silakan coba lagi.');
+              resolve(false);
+            },
+            () => {
+              getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                console.log('Download URL received:', downloadURL);
+                setAlamatFile(downloadURL);
+                console.log('Alamat File set to:', downloadURL);
+                if (downloadURL) {
+                  const namaFile = 'fotoKTP/ktp' + localTime;
+                  setNamaFile(namaFile);
+                  // Only call setUploading(false) once
+                  setUploading(false);
+                  resolve(true);
+                } else {
+                  console.log('Alamat File KTP is not set correctly. Aborting.');
+                  Alert.alert('Error', 'Gagal mengatur alamat file KTP. Silakan coba lagi.');
+                  resolve(false);
+                }
+              });
+            }
+          );
+        })
+      );
+  
+      // Handle upload task foto
+      promises.push(
+        new Promise((resolve) => {
+          uploadTaskFoto.on(
+            'state_changed',
+            (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              console.log('Upload Foto is ' + progress.toFixed(2) + '% done');
+            },
+            (error) => {
+              console.error('Error uploading Foto to Firebase:', error);
+              setUploading(false);
+              Alert.alert('Error', 'Gagal mengupload Foto. Silakan coba lagi.');
+              resolve(false);
+            },
+            () => {
+              getDownloadURL(uploadTaskFoto.snapshot.ref).then((downloadURL) => {
+                console.log('Download URL for Foto received:', downloadURL);
+                setAlamatFileFoto(downloadURL);
+                // Only call setUploading(false) once
+                setUploading(false);
+                // Handle success for Foto upload
+                if (downloadURL) {
+                  const namaFile = 'fotoKTP/foto' + localTime;
+                  setNamaFileFoto(namaFile);
+                  resolve(true);
+                } else {
+                  console.log('Alamat File KTP is not set correctly. Aborting.');
+                  Alert.alert('Error', 'Gagal mengatur alamat file Foto. Silakan coba lagi.');
+                  resolve(false);
+                }
+              });
+            }
+          );
+        })
+      );
+  
+      // Handle signature upload task
+      promises.push(
+        new Promise((resolve) => {
+          uploadTaskSign.on(
+            'state_changed',
+            (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              console.log('Upload signature is ' + progress.toFixed(2) + '% done');
+            },
+            (error) => {
+              console.error('Error uploading signature to Firebase:', error);
+              setUploading(false);
+              Alert.alert('Error', 'Gagal mengupload tanda tangan. Silakan coba lagi.');
+              resolve(false);
+            },
+            () => {
+              getDownloadURL(uploadTaskSign.snapshot.ref).then((downloadURL) => {
+                console.log('Download URL for signature received:', downloadURL);
+                setAlamatFileSign(downloadURL);
+                // Only call setUploading(false) once
+                setUploading(false);
+                // Handle success for Signature upload
+                if (downloadURL) {
+                  const namaFile = 'fotoKTP/sign' + localTime;
+                  setNamaFileSign(namaFile);
+                  resolve(true);
+                } else {
+                  console.log('Alamat File Sign is not set correctly. Aborting.');
+                  Alert.alert('Error', 'Gagal mengatur alamat file Sign. Silakan coba lagi.');
+                  resolve(false);
+                }
+              });
+            }
+          );
+        })
+      );
+  
+      // Wait for all promises to resolve
+      await Promise.all(promises);
+  
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setUploading(false);
+      throw error; // Propagate the error to the calling function
+    }
+  };  
 
   const showDatePicker = () => {
     setDatePickerVisibility(true);

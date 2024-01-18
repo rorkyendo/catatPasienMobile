@@ -23,6 +23,7 @@ export default function DetailPesertaScreen({navigation}) {
     const data = await getDocs(q);
     if (!data.empty) {
       const details = data.docs.map((doc) => doc.data());
+      console.log(details)
       setDetailData(details[0]); // Ambil data pertama (seharusnya hanya ada satu dokumen dengan NIK yang cocok)
     }
   };
@@ -101,6 +102,30 @@ export default function DetailPesertaScreen({navigation}) {
                   }}
                 />
                 <Text style={{textAlign:"center",fontSize:18,fontWeight:'bold',marginTop:5}}>Data Peserta</Text>
+              </View>
+              <View style={{flexDirection:'row'}}>
+                  <View>
+                    <Text style={{textAlign:"center",fontSize:18,fontWeight:'bold',marginTop:5}}>Pas Foto</Text>
+                    <Image
+                      source={{ uri: detailData.fileFoto }}
+                      style={{
+                        width: 150, // Width of the bounding box
+                        height: 150, // Height of the bounding box
+                        resizeMode: 'cover', // Make sure the image fills the specified dimensions
+                      }}
+                    />
+                  </View>
+                  <View style={{marginLeft:50}}>
+                    <Text style={{textAlign:"center",fontSize:18,fontWeight:'bold',marginTop:5}}>TTD</Text>
+                    <Image
+                      source={{ uri: detailData.fileSign }}
+                      style={{
+                        width: 150, // Width of the bounding box
+                        height: 150, // Height of the bounding box
+                        resizeMode: 'cover', // Make sure the image fills the specified dimensions
+                      }}
+                    />
+                  </View>
               </View>
               <View style={{margin:5}}>
                 <Text style={{fontWeight:'bold'}}>NIK :</Text>
