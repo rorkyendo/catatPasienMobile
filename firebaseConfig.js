@@ -9,14 +9,13 @@ import { initializeApp } from 'firebase/app';
 
 // Initialize Firebase
 export const firebaseConfig = {
-  measurementId: 'G-measurement-id',
-  apiKey: "AIzaSyBXNFw_Yz9ze1DiTvBH7bWLhM5W_RZuVnA",
-  authDomain: "catatvaksin.firebaseapp.com",
-  projectId: "catatvaksin",
-  storageBucket: "catatvaksin.appspot.com",
-  messagingSenderId: "832049279775",
-  appId: "1:832049279775:web:b43f398fb8da7159ecb62a",
-  measurementId: "G-V01T9FV98M"
+  apiKey: "AIzaSyAHdZe22M8zY4TcostVQn1mOIYTeYg2l8g",
+  authDomain: "datapasien-a9a9f.firebaseapp.com",
+  projectId: "datapasien-a9a9f",
+  storageBucket: "datapasien-a9a9f.appspot.com",
+  messagingSenderId: "747646199468",
+  appId: "1:747646199468:web:3c567d8c62429160342109",
+  measurementId: "G-XG7N0Q6YLK"
 };
 
 export const app = initializeApp(firebaseConfig);
