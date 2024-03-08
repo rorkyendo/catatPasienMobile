@@ -15,7 +15,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rorkyendo.catatPasien"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,10 +27,16 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
-      ]
+      ],
+      "package": "com.rorkyendo.catatPasien"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "795edd14-7c96-46b5-9f04-d93e7f88f8fa"
+      }
     }
   }
 }

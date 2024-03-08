@@ -24,7 +24,6 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FaceDetector from 'expo-face-detector';
 import { ImageManipulator, manipulateAsync } from 'expo-image-manipulator';
 
-
 export default function CatatPeserta({ navigation }) {
   const [nik, setNIK] = useState('');
   const [nama, setNama] = useState('');
@@ -53,6 +52,12 @@ export default function CatatPeserta({ navigation }) {
   const [alamatFileFoto, setAlamatFileFoto] = useState('');
   const [namaFileSign, setNamaFileSign] = useState('');
   const [alamatFileSign, setAlamatFileSign] = useState('');
+  const [rtrw, setRtrw] = useState('');
+  const [provinsi, setProvinsi] = useState('');
+  const [statusKawin, setStatusKawin] = useState('');
+  const [berlaku, setBerlaku] = useState('SEUMUR HIDUP');
+  const [kewargaNegaraan, setKewargaNegaraan] = useState('WNI');
+  const [kabupaten, setKabupaten] = useState('');
 
   const db = getFirestore(app);
 
@@ -76,6 +81,19 @@ export default function CatatPeserta({ navigation }) {
       detectAndCropFace(source.uri)
   };
 
+  const pickImageGallery = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [4,3],
+        quality: 1
+    });
+    const source = {uri: result.assets[0].uri}
+    setKtpImage(source.uri)
+    uploadGambar()
+    detectAndCropFace(source.uri)
+};
+
   const detectAndCropFace = async (ktpImage) => {
     try {
       const faces = await FaceDetector.detectFacesAsync(ktpImage, {
@@ -93,20 +111,41 @@ export default function CatatPeserta({ navigation }) {
         const width = face.bounds.size.width;
         const height = face.bounds.size.height;
 
-        // Crop the image
+        console.log('face',face)
+        console.log('x',x)
+        console.log('y',y)
+        console.log('width',width)
+        console.log('height',height)
+
+        // // Crop the image
         const croppedImage = await manipulateAsync(
           ktpImage,
           [{ crop: { originX: x, originY: y, width, height } }],
           { compress: 1, format: 'jpeg', base64: false }
-        );
+        ).catch((error) => {
+          console.error('Error during image manipulation:', error);
+          // Handle the error appropriately, e.g., show an error message to the user
+        });
 
-        // Crop the signature
+        console.log('croppedImage',croppedImage)
+        // Get the bottom coordinate of the detected face
+        const faceBottomY = y + height;
+
+        // Calculate the new originY for the signature crop (set it to half of the face's bottom)
+        const offsetY = faceBottomY + (height / 2);
+        const addWith = width + 130;
+        // // Crop the signature
         const croppedSignature = await manipulateAsync(
           ktpImage,
-          [{ crop: { originX: x, originY: y+850, width, height } }],
+          [{ crop: { originX: x-30, originY: offsetY, width:addWith, height } }],
           { compress: 1, format: 'jpeg', base64: false }
-        );
+        ).catch((error) => {
+          console.error('Error during image manipulation:', error);
+          // Handle the error appropriately, e.g., show an error message to the user
+        });
         
+        console.log('croppedSignature',croppedSignature);
+
 
         // Set the cropped image to the state
         setFaceImage(croppedImage.uri);
@@ -115,18 +154,18 @@ export default function CatatPeserta({ navigation }) {
         setSignatureImage(croppedSignature.uri);
 
       } else {
-        Alert.alert('Wajah pada ktp tidak terdeteksi');
+        alert('Wajah pada ktp tidak terdeteksi');
       }
     } catch (error) {
       console.error('Error detecting and cropping face:', error);
       // Handle the error appropriately, e.g., show an error message to the user
     }
-  };  
+  };
+
   const resendImage = async () => {
     uploadGambar()
-    detectAndCropFace(ktpImage)
+    detectAndCropFace(ktpImage) 
   }
-  
   
   const uriToBlob = (uri) => {
     return new Promise((resolve, reject) => {
@@ -141,65 +180,77 @@ export default function CatatPeserta({ navigation }) {
        xhr.responseType = 'blob'
        xhr.open('GET', uri, true)
    
-       xhr.send(null)})}
+       xhr.send(null)})
+  }
 
   function uploadGambar() {
     let body = new FormData();
     
     alert("Sistem sedang melakukan pengecekan KTP..")
 
-    body.append('filename', {
-      uri: ktpImage,
-      type: 'image/jpeg', // Ganti dengan tipe media yang sesuai jika perlu (contoh: image/png)
-      name: 'ktp.jpg', // Ganti dengan nama berkas yang sesuai jika perlu
-    });
-
-    // const faces = FaceDetection.detect(ktpImage, { landmarkMode: 'all' });
-    // setFaceData(faces);
-
-    fetch('http://192.168.43.151:8080/scan', {
-        method: 'POST',
-        body: body,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          // Jika diperlukan, Anda dapat menambahkan header lain di sini
-        },
-      })
-      .then(response => response.json())
-      .then(resp => {
-        setTimeout(() => {
-          alert("Gambar selesai di proses")
-        }, 100);
-        // Handle response dari API jika perlu
-        console.log('Response dari API:', resp);
-        setNama(resp.data.nama)
-        const nikNumbersOnly = resp.data.nik.replace(/\D/g, '');
-        setNIK(nikNumbersOnly)
-        tglLahirPasien(nikNumbersOnly)
-        cleanTempatLahir(resp.data.tempat_tanggal_lahir)
-        cleanedJenkel(resp.data.jenis_kelamin)
-        cleanedGolDar(resp.data.golongan_darah)
-        cleanedAgama(resp.data.agama)
-        setAlamat(resp.data.alamat)
-        setKecamatan(resp.data.kecamatan)
-        setKelurahan(resp.data.kelurahan_atau_desa)
-        setPekerjaan(resp.data.pekerjaan)
-      })
-      .catch(error => {
-        // Handle kesalahan jika terjadi
-        console.error('Error:', error);
+    try {
+      body.append('filename', {
+        uri: ktpImage,
+        type: 'image/jpeg', // Ganti dengan tipe media yang sesuai jika perlu (contoh: image/png)
+        name: 'ktp.jpg', // Ganti dengan nama berkas yang sesuai jika perlu
       });
+  
+      fetch('http://192.168.132.30:8080/scan', {
+          method: 'POST',
+          body: body,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            // Jika diperlukan, Anda dapat menambahkan header lain di sini
+          },
+        })
+        .then(response => response.json())
+        .then(resp => {
+          setTimeout(() => {
+            alert("Gambar selesai di proses")
+          }, 100);
+          // Handle response dari API jika perlu
+          console.log('Response dari API:', resp.data);
+          // console.log('Response dari API:', test);
+          
+          setNama(resp.data["1"])
+          const nikNumbersOnly = resp.data["0"].replace(/\D/g, '');
+          setNIK(nikNumbersOnly)
+          tglLahirPasien(nikNumbersOnly)
+          cleanTempatLahir(resp.data["2"])
+          cleanedJenkel(resp.data["3"])
+          setGolonganDarah(resp.data["4"])
+          cleanedAgama(resp.data["8"])
+          setAlamat(resp.data["5"])
+          setKecamatan(resp.data["7"])
+          setKelurahan(resp.data["6"])
+          setPekerjaan(resp.data["9"])
+          setProvinsi(resp.data["10"])
+          setRtrw(resp.data["12"])
+        })
+        .catch(error => {
+          // Handle kesalahan jika terjadi
+          console.error('Error:', error);
+        });
+    } catch (error) {
+      console.log('Error:', error);
+    }
   }
 
-
   function tglLahirPasien(nik){
-    const tgl = nik.substr(6, 2); // Mengambil karakter ke-1 dan ke-2 untuk tanggal
-    const bln = nik.substr(8, 2); // Mengambil karakter ke-3 dan ke-4 untuk bulan
-    // Mengambil dua digit terakhir tahun dan mengonversinya ke format tahun yang benar
-    const duaDigitTahun = nik.substr(10, 2);
-    const tahun = duaDigitTahun < 21 ? `20${duaDigitTahun}` : `19${duaDigitTahun}`;
-    const formattedDate = `${tahun}/${bln}/${tgl}`;
-    setTglLahir(formattedDate);
+    try {
+      var tgl = nik.substr(6, 2); // Mengambil karakter ke-1 dan ke-2 untuk tanggal
+      const bln = nik.substr(8, 2); // Mengambil karakter ke-3 dan ke-4 untuk bulan
+      if (tgl >= 31) {
+        tgl = tgl.substr(1,2);
+      }
+      // Mengambil dua digit terakhir tahun dan mengonversinya ke format tahun yang benar
+      const duaDigitTahun = nik.substr(10, 2);
+      const tahun = duaDigitTahun < 21 ? `20${duaDigitTahun}` : `19${duaDigitTahun}`;
+      const formattedDate = `${tahun}/${bln}/${tgl}`;
+      setTglLahir(formattedDate);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   function cleanedJenkel(jenkel) {
@@ -233,20 +284,32 @@ export default function CatatPeserta({ navigation }) {
 
 
   function cleanTempatLahir(ttl){
-      setTempatLahir(ttl);
-      const data = ttl.split("r");
-    if(Array.isArray(data) === 'true'){
-      const cleanedData = data[1].split(",");
-      setTempatLahir(cleanedData[0].replace(":",""));
-    }
+      try {
+        const data = ttl.split("r");
+        if(Array.isArray(data) === 'true'){
+          const cleanedData = data[1].split(",");
+          if (Array.isArray(cleanedData) === 'true') {
+            setTempatLahir(cleanedData[0].replace(":",""));
+          }
+        }else{
+          setTempatLahir(ttl);
+        }
+      } catch (error) {
+        setTempatLahir(ttl);
+      }
   }
 
   function cleanedGolDar(goldar){
-    setGolonganDarah(goldar);
-    const data = goldar.split("ra");
-    if(Array.isArray(data) === 'true'){
-      const cleanedData = data[1].split(",");
-      setGolonganDarah(cleanedData[0].replace(":",""));
+    try {
+      const data = goldar.split("ra");
+      if(Array.isArray(data) === 'true'){
+        const cleanedData = data[1].split(",");
+        if (Array.isArray(cleanedData) === 'true') {
+          setGolonganDarah(cleanedData[0].replace(":",""));
+        }
+      }
+    } catch (error) {
+      setGolonganDarah(goldar);
     }
   }
     
@@ -272,7 +335,12 @@ export default function CatatPeserta({ navigation }) {
           alamat: alamat,
           kelurahan: kelurahan,
           kecamatan: kecamatan,
+          kabupaten:kabupaten,
+          provinsi:provinsi,
+          rtrw:rtrw,
           agama: agama,
+          kewargaNegaraan: kewargaNegaraan,
+          berlaku: berlaku,
           fileKtp: alamatFile,
           fileFoto: alamatFileFoto,
           fileSign: alamatFileSign,
@@ -304,12 +372,12 @@ export default function CatatPeserta({ navigation }) {
           alert('Terjadi kesalahan saat memeriksa data. Silakan coba lagi.');
         }
       } else {
-        Alert.alert('Foto belum tersimpan');
+        alert('Foto belum tersimpan');
       }
     } catch (error) {
       console.error('Error uploading to Firebase:', error);
       // Handle error during upload
-      Alert.alert('Error', 'Gagal mengupload file. Silakan coba lagi.');
+      alert('Error', 'Gagal mengupload file. Silakan coba lagi.');
     }
   }
   
@@ -346,7 +414,7 @@ export default function CatatPeserta({ navigation }) {
             (error) => {
               console.error('Error uploading to Firebase:', error);
               setUploading(false);
-              Alert.alert('Error', 'Gagal mengupload file ktp. Silakan coba lagi.');
+              alert('Error', 'Gagal mengupload file ktp. Silakan coba lagi.');
               resolve(false);
             },
             () => {
@@ -362,7 +430,7 @@ export default function CatatPeserta({ navigation }) {
                   resolve(true);
                 } else {
                   console.log('Alamat File KTP is not set correctly. Aborting.');
-                  Alert.alert('Error', 'Gagal mengatur alamat file KTP. Silakan coba lagi.');
+                  alert('Error', 'Gagal mengatur alamat file KTP. Silakan coba lagi.');
                   resolve(false);
                 }
               });
@@ -383,7 +451,7 @@ export default function CatatPeserta({ navigation }) {
             (error) => {
               console.error('Error uploading Foto to Firebase:', error);
               setUploading(false);
-              Alert.alert('Error', 'Gagal mengupload Foto. Silakan coba lagi.');
+              alert('Error', 'Gagal mengupload Foto. Silakan coba lagi.');
               resolve(false);
             },
             () => {
@@ -399,7 +467,7 @@ export default function CatatPeserta({ navigation }) {
                   resolve(true);
                 } else {
                   console.log('Alamat File KTP is not set correctly. Aborting.');
-                  Alert.alert('Error', 'Gagal mengatur alamat file Foto. Silakan coba lagi.');
+                  alert('Error', 'Gagal mengatur alamat file Foto. Silakan coba lagi.');
                   resolve(false);
                 }
               });
@@ -420,7 +488,7 @@ export default function CatatPeserta({ navigation }) {
             (error) => {
               console.error('Error uploading signature to Firebase:', error);
               setUploading(false);
-              Alert.alert('Error', 'Gagal mengupload tanda tangan. Silakan coba lagi.');
+              alert('Error', 'Gagal mengupload tanda tangan. Silakan coba lagi.');
               resolve(false);
             },
             () => {
@@ -436,7 +504,7 @@ export default function CatatPeserta({ navigation }) {
                   resolve(true);
                 } else {
                   console.log('Alamat File Sign is not set correctly. Aborting.');
-                  Alert.alert('Error', 'Gagal mengatur alamat file Sign. Silakan coba lagi.');
+                  alert('Error', 'Gagal mengatur alamat file Sign. Silakan coba lagi.');
                   resolve(false);
                 }
               });
@@ -545,20 +613,38 @@ export default function CatatPeserta({ navigation }) {
                   )}
                 </View>
               </View>
-
-              <TouchableOpacity
-                style={{
-                  backgroundColor: '#008B8B',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: 50,
-                }}
-                onPress={() => pickImage()}
-              >
-                <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
-                  Ambil Gambar KTP
-                </Text>
-              </TouchableOpacity>
+            <View style={{flexDirection:'row'}}>
+                <View style={{flex:1,marginRight:35}}>
+                    <TouchableOpacity
+                    style={{
+                      backgroundColor: '#008B8B',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: 50,
+                    }}
+                    onPress={() => pickImage()}
+                  >
+                    <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+                      Buka Kamera
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={{flex:1,marginRight:0}}>
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: '#008B8B',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: 50,
+                      }}
+                      onPress={() => pickImageGallery()}
+                    >
+                      <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+                        Buka Gallery
+                      </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
               {ktpImage && (
                 <TouchableOpacity
                 style={{
@@ -594,7 +680,6 @@ export default function CatatPeserta({ navigation }) {
               onChangeText={(text) => setTempatLahir(text)}
               style={styles.input}
             />
-
             <View style={{marginTop:10}}>
               <Text style={styles.input}>{tglLahir}</Text>
               <Button title="Pilih Tanggal lahir" onPress={showDatePicker} />
@@ -626,7 +711,13 @@ export default function CatatPeserta({ navigation }) {
               style={styles.input}
             />
             <TextInput
-              placeholder="Kelurahan"
+              placeholder="Provinsi"
+              value={provinsi}
+              onChangeText={(text) => setProvinsi(text)}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Kelurahan / Kabupaten"
               value={kelurahan}
               onChangeText={(text) => setKelurahan(text)}
               style={styles.input}
@@ -635,6 +726,24 @@ export default function CatatPeserta({ navigation }) {
               placeholder="Kecamatan"
               value={kecamatan}
               onChangeText={(text) => setKecamatan(text)}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="RT/RW"
+              value={rtrw}
+              onChangeText={(text) => setRtrw(text)}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Kewarganegaraan"
+              value={kewargaNegaraan}
+              onChangeText={(text) => setKewargaNegaraan(text)}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Berlaku Hingga"
+              value={berlaku}
+              onChangeText={(text) => setBerlaku(text)}
               style={styles.input}
             />
             <Picker
