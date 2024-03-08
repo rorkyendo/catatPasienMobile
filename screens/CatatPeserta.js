@@ -225,6 +225,7 @@ export default function CatatPeserta({ navigation }) {
           setKelurahan(resp.data["6"])
           setPekerjaan(resp.data["9"])
           setProvinsi(resp.data["10"])
+          setKabupaten(resp.data["11"])
           setRtrw(resp.data["12"])
         })
         .catch(error => {
@@ -314,14 +315,12 @@ export default function CatatPeserta({ navigation }) {
   }
     
   async function simpanData(){
-    simpanDataToFirebase()
+    await uploadToFirebase();
   }
 
   async function simpanDataToFirebase() {
     try {
       // Wait for the uploads to complete
-      await uploadToFirebase();
-  
       if (alamatFile && alamatFileFoto && alamatFileSign) {
         let today = new Date().toISOString().slice(0, 10);
         const data = {
@@ -515,7 +514,8 @@ export default function CatatPeserta({ navigation }) {
   
       // Wait for all promises to resolve
       await Promise.all(promises);
-  
+      simpanDataToFirebase();
+      
     } catch (error) {
       console.error('Fetch error:', error);
       setUploading(false);
@@ -717,15 +717,21 @@ export default function CatatPeserta({ navigation }) {
               style={styles.input}
             />
             <TextInput
-              placeholder="Kelurahan / Kabupaten"
-              value={kelurahan}
-              onChangeText={(text) => setKelurahan(text)}
+              placeholder="Kabupaten / Kota"
+              value={kabupaten}
+              onChangeText={(text) => setKabupaten(text)}
               style={styles.input}
             />
             <TextInput
               placeholder="Kecamatan"
               value={kecamatan}
               onChangeText={(text) => setKecamatan(text)}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Kelurahan"
+              value={kelurahan}
+              onChangeText={(text) => setKelurahan(text)}
               style={styles.input}
             />
             <TextInput

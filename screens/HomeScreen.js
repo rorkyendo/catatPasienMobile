@@ -31,10 +31,17 @@ const HomeScreen = ({ navigation }) => {
       'pekerjaan',
       'jenkel',
       'alamat',
-      'kelurahan',
+      'provinsi',
+      'kabupaten',
       'kecamatan',
+      'kelurahan',
+      'rtrw',
       'agama',
+      'kewarganegaraan',
+      'berlaku',
       'fileKtp',
+      'fileFoto',
+      'fileSign',
       'createdAt',
     ];
   

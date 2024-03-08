@@ -152,6 +152,14 @@ export default function DetailPesertaScreen({navigation}) {
                 <Text>{detailData.alamat}</Text>
               </View>
               <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Provinsi :</Text>
+                <Text>{detailData.provinsi}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Kabupaten :</Text>
+                <Text>{detailData.kabupaten}</Text>
+              </View>
+              <View style={{margin:5}}>
                 <Text style={{fontWeight:'bold'}}>Kelurahan/Desa :</Text>
                 <Text>{detailData.kelurahan}</Text>
               </View>
@@ -160,12 +168,24 @@ export default function DetailPesertaScreen({navigation}) {
                 <Text>{detailData.kecamatan}</Text>
               </View>
               <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>RT/RW :</Text>
+                <Text>{detailData.rtrw}</Text>
+              </View>
+              <View style={{margin:5}}>
                 <Text style={{fontWeight:'bold'}}>Agama :</Text>
                 <Text>{detailData.agama}</Text>
               </View>
               <View style={{margin:5}}>
                 <Text style={{fontWeight:'bold'}}>Pekerjaan :</Text>
                 <Text>{detailData.pekerjaan}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Kewarganegaraan :</Text>
+                <Text>{detailData.kewargaNegaraan}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Berlaku :</Text>
+                <Text>{detailData.berlaku}</Text>
               </View>
               <View style={{margin:10}}>
                 <TouchableOpacity style={styles.deleteButton}

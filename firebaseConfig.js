@@ -8,14 +8,14 @@ import { initializeApp } from 'firebase/app';
 // import {...} from "firebase/storage";
 
 // Initialize Firebase
-export const firebaseConfig = {
-  apiKey: "AIzaSyAHdZe22M8zY4TcostVQn1mOIYTeYg2l8g",
-  authDomain: "datapasien-a9a9f.firebaseapp.com",
-  projectId: "datapasien-a9a9f",
-  storageBucket: "datapasien-a9a9f.appspot.com",
-  messagingSenderId: "747646199468",
-  appId: "1:747646199468:web:3c567d8c62429160342109",
-  measurementId: "G-XG7N0Q6YLK"
+const firebaseConfig = {
+  apiKey: "AIzaSyBkFZbso3khWIohGFG-0D7gQkf1j3dzKHI",
+  authDomain: "catatvaksin-70be4.firebaseapp.com",
+  projectId: "catatvaksin-70be4",
+  storageBucket: "catatvaksin-70be4.appspot.com",
+  messagingSenderId: "921571678799",
+  appId: "1:921571678799:web:e7ccec58b90af4f7a8e83a",
+  measurementId: "G-6TJBVLBEB7"
 };
 
 export const app = initializeApp(firebaseConfig);
