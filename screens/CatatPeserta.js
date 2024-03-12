@@ -55,6 +55,7 @@ export default function CatatPeserta({ navigation }) {
   const [rtrw, setRtrw] = useState('');
   const [provinsi, setProvinsi] = useState('');
   const [statusKawin, setStatusKawin] = useState('');
+  const [tglKtp, setTglKtp] = useState('');
   const [berlaku, setBerlaku] = useState('SEUMUR HIDUP');
   const [kewargaNegaraan, setKewargaNegaraan] = useState('WNI');
   const [kabupaten, setKabupaten] = useState('');
@@ -227,6 +228,8 @@ export default function CatatPeserta({ navigation }) {
           setProvinsi(resp.data["10"])
           setKabupaten(resp.data["11"])
           setRtrw(resp.data["12"])
+          setTglKtp(resp.data["16"])
+          setStatusKawin(resp.data["13"])
         })
         .catch(error => {
           // Handle kesalahan jika terjadi
@@ -293,7 +296,12 @@ export default function CatatPeserta({ navigation }) {
             setTempatLahir(cleanedData[0].replace(":",""));
           }
         }else{
-          setTempatLahir(ttl);
+          const cek = ttl.split(",");
+          if(cek.length > 0){
+            setTempatLahir(cek[0]);
+          }else{
+            setTempatLahir(ttl);
+          }
         }
       } catch (error) {
         setTempatLahir(ttl);
@@ -340,6 +348,8 @@ export default function CatatPeserta({ navigation }) {
           agama: agama,
           kewargaNegaraan: kewargaNegaraan,
           berlaku: berlaku,
+          statusKawin:statusKawin,
+          tglKtp:tglKtp,
           fileKtp: alamatFile,
           fileFoto: alamatFileFoto,
           fileSign: alamatFileSign,
@@ -536,6 +546,11 @@ export default function CatatPeserta({ navigation }) {
     hideDatePicker();
   };
 
+  const handleConfirm2 = (date) => {
+    setTglKtp(date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate());
+    hideDatePicker();
+  };
+
   return (
     <SafeAreaProvider>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -656,7 +671,7 @@ export default function CatatPeserta({ navigation }) {
                 onPress={() => resendImage()}
               >
                 <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
-                  Proses Ulang KTP
+                  Proses KTP
                 </Text>
               </TouchableOpacity>
               )}
@@ -673,7 +688,6 @@ export default function CatatPeserta({ navigation }) {
               onChangeText={(text) => setNama(text)}
               style={styles.input}
             />
-
             <TextInput
               placeholder="Tempat Lahir"
               value={tempatLahir}
@@ -681,7 +695,11 @@ export default function CatatPeserta({ navigation }) {
               style={styles.input}
             />
             <View style={{marginTop:10}}>
-              <Text style={styles.input}>{tglLahir}</Text>
+              {tglLahir ? (
+                <Text style={styles.input}>{tglLahir}</Text>
+              ):(
+                <Text style={[styles.input,{color:'rgba(0, 0, 0, 0.5)'}]}>Masukkan Tgl Lahir</Text>
+              )}
               <Button title="Pilih Tanggal lahir" onPress={showDatePicker} />
               <DateTimePickerModal
                 isVisible={isDatePickerVisible}
@@ -770,6 +788,26 @@ export default function CatatPeserta({ navigation }) {
               onChangeText={(text) => setPekerjaan(text)}
               style={styles.input}
             />
+            <TextInput
+              placeholder="Status Perkawinan"
+              value={statusKawin}
+              onChangeText={(text) => setStatusKawin(text)}
+              style={styles.input}
+            />
+            <View style={{marginTop:10}}>
+              {tglKtp ?  (
+                <Text style={styles.input}>{tglKtp}</Text>
+              ):(
+                <Text style={[styles.input,{color:'rgba(0, 0, 0, 0.5)'}]}>Masukkan Tgl KTP</Text>
+              )}
+              <Button title="Pilih Tanggal KTP" onPress={showDatePicker} />
+              <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="date"
+                onConfirm={handleConfirm2}
+                onCancel={hideDatePicker}
+              />
+            </View>
             <TouchableOpacity
               style={{
                 backgroundColor: '#008B8B',

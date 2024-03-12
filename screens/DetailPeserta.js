@@ -180,12 +180,20 @@ export default function DetailPesertaScreen({navigation}) {
                 <Text>{detailData.pekerjaan}</Text>
               </View>
               <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Status Kawin :</Text>
+                <Text>{detailData.statusKawin}</Text>
+              </View>
+              <View style={{margin:5}}>
                 <Text style={{fontWeight:'bold'}}>Kewarganegaraan :</Text>
                 <Text>{detailData.kewargaNegaraan}</Text>
               </View>
               <View style={{margin:5}}>
                 <Text style={{fontWeight:'bold'}}>Berlaku :</Text>
                 <Text>{detailData.berlaku}</Text>
+              </View>
+              <View style={{margin:5}}>
+                <Text style={{fontWeight:'bold'}}>Tgl KTP :</Text>
+                <Text>{detailData.tglKtp}</Text>
               </View>
               <View style={{margin:10}}>
                 <TouchableOpacity style={styles.deleteButton}
