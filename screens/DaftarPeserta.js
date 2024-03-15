@@ -96,7 +96,13 @@ export default function DaftarPesertaScreen({navigation}) {
     }else{
       var tgl = date.getDate()
     }
-    setTglDibuat(date.getFullYear()+"-"+Number(date.getMonth()+1)+"-"+tgl);
+
+    if (date.getMonth() < 10) {
+      var month  =  "0"+Number(date.getMonth()+1)
+    }else{
+      var month = Number(date.getMonth()+1)
+    }
+    setTglDibuat(date.getFullYear()+"-"+month+"-"+tgl);
     hideDatePicker();
   };
 
