@@ -552,12 +552,14 @@ export default function CatatPeserta({ navigation }) {
 
 
   const handleConfirm = (date) => {
-    setTglLahir(date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate());
+    const tgl = Number(date.getMonth()+1)
+    setTglLahir(date.getFullYear()+"/"+tgl+"/"+date.getDate());
     hideDatePicker();
   };
 
   const handleConfirm2 = (date) => {
-    setTglKtp(date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate());
+    const tgl = Number(date.getMonth()+1)
+    setTglLahir(date.getFullYear()+"/"+tgl+"/"+date.getDate());
     hideDatePicker();
   };
 
