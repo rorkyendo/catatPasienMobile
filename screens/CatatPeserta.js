@@ -196,7 +196,7 @@ export default function CatatPeserta({ navigation }) {
         name: 'ktp.jpg', // Ganti dengan nama berkas yang sesuai jika perlu
       });
   
-      fetch('http://192.168.132.30:8080/scan', {
+      fetch('http://ktpdet.my.id:8082/scan', {
           method: 'POST',
           body: body,
           headers: {
