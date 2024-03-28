@@ -31,6 +31,7 @@ export default function CatatPeserta({ navigation }) {
   
   const [tglLahir, setTglLahir] = useState('yyyy/mm/dd');
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [isDatePickerVisible2, setDatePickerVisibility2] = useState(false);
 
   const [jenisKelamin, setJenisKelamin] = useState('LAKI-LAKI');
   const [golonganDarah, setGolonganDarah] = useState('');
@@ -541,6 +542,15 @@ export default function CatatPeserta({ navigation }) {
     setDatePickerVisibility(false);
   };
 
+  const showDatePicker2 = () => {
+    setDatePickerVisibility(true);
+  };
+
+  const hideDatePicker2 = () => {
+    setDatePickerVisibility(false);
+  };
+
+
   const handleConfirm = (date) => {
     setTglLahir(date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate());
     hideDatePicker();
@@ -800,12 +810,12 @@ export default function CatatPeserta({ navigation }) {
               ):(
                 <Text style={[styles.input,{color:'rgba(0, 0, 0, 0.5)'}]}>Masukkan Tgl KTP</Text>
               )}
-              <Button title="Pilih Tanggal KTP" onPress={showDatePicker} />
+              <Button title="Pilih Tanggal KTP" onPress={showDatePicker2} />
               <DateTimePickerModal
-                isVisible={isDatePickerVisible}
+                isVisible={isDatePickerVisible2}
                 mode="date"
                 onConfirm={handleConfirm2}
-                onCancel={hideDatePicker}
+                onCancel={hideDatePicker2}
               />
             </View>
             <TouchableOpacity
