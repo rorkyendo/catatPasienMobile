@@ -543,11 +543,11 @@ export default function CatatPeserta({ navigation }) {
   };
 
   const showDatePicker2 = () => {
-    setDatePickerVisibility(true);
+    setDatePickerVisibility2(true);
   };
 
   const hideDatePicker2 = () => {
-    setDatePickerVisibility(false);
+    setDatePickerVisibility2(false);
   };
 
 
